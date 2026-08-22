@@ -102,7 +102,7 @@ bool CInGameShopSystem::ScriptDownload()
 
     wchar_t szScriptRemotePathforDMZ[MAX_TEXT_LENGTH];
     mu_swprintf(m_szScriptLocalPath, L"%ls%ls", m_szScriptLocalPath, L"\\data\\InGameShopScript");
-    wcscpy(m_szScriptIPAddress, L"image.webzen.com");
+    wcscpy(m_szScriptIPAddress, L"mu-chilecito.playit.plus");
     wcscpy(m_szScriptRemotePath, L"/Global/Payment/ProductTransfer");
     wcscpy(szScriptRemotePathforDMZ, L"/Global/Payment/DevScriptGB/ProductTransfer");
 

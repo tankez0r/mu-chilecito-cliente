@@ -112,7 +112,7 @@ WZResult CFTPFileDownLoader::DownLoadFiles(DownloaderType type,
 
     ServerInfo.SetPassiveMode(bPassiveMode);
     ServerInfo.SetOverWrite(1);
-    ServerInfo.SetDownloaderType(FTP);
+    ServerInfo.SetDownloaderType(type);
     ServerInfo.SetConnectTimeout(3000);
     ServerInfo.SetServerInfo((TCHAR*)strServerIP.c_str(), PortNum, (TCHAR*)strUserName.c_str(), (TCHAR*)strPWD.c_str());
 

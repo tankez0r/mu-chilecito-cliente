@@ -3,6 +3,12 @@
 This file is the entry point for AI coding assistants (Claude Code, Cursor, Codex,
 etc.) working in this repository. It also applies to human contributors.
 
+## Current task on branch `cash-shop-http-catalog`
+
+If you're on this branch, read [`PARCHE_CASH_SHOP_HTTP.md`](PARCHE_CASH_SHOP_HTTP.md)
+first — it explains a small Cash Shop patch that needs to be built (Release) and
+verified. Everything else in this file still applies.
+
 ## Coding rules — read first
 
 **The coding rules in [`docs/CODING_RULES.md`](docs/CODING_RULES.md) apply to all
