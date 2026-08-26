@@ -12904,6 +12904,12 @@
   <data name="BasicAttackFallback" xml:space="preserve">
     <value>Basic Attack Fallback</value>
   </data>
+  <data name="AoeAutoAttack" xml:space="preserve">
+    <value>AoE Auto-Attack (AoE skills only)</value>
+  </data>
+  <data name="AutoBuffLifeElf" xml:space="preserve">
+    <value>Auto Life Buff (Elf class only)</value>
+  </data>
   <data name="Connection lost" xml:space="preserve">
     <value>Connection lost</value>
   </data>

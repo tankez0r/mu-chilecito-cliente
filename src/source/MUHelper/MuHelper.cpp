@@ -174,6 +174,11 @@ namespace MUHelper
                 return;
             }
 
+            if (!AutoBuffLifeElf())
+            {
+                return;
+            }
+
             if (!Buff())
             {
                 return;
@@ -234,7 +239,13 @@ namespace MUHelper
             _targetsLock.unlock();
         }
 
-        if (m_config.bUseSelfDefense && IsMonster(pTarget))
+        // Only self-defense should hijack the current target, and only when the
+        // mob is actually attacking. AddTarget also fires on plain movement/spawn
+        // viewport updates (bIsAttacking == false) for every nearby monster, which
+        // when surrounded arrive many times a second -- reassigning m_iCurrentTarget
+        // on those thrashes the target before any attack/skill sequence can land,
+        // making the helper look stuck.
+        if (m_config.bUseSelfDefense && bIsAttacking && IsMonster(pTarget))
         {
             m_iCurrentTarget = iTargetId;
         }
@@ -354,6 +365,41 @@ namespace MUHelper
         }
 
         return iFarthestMonsterId;
+    }
+
+    // Whether any known monster target is already within fRange, used to decide
+    // whether the AOE auto-attack should hold position (see SimulateSkill).
+    bool CMuHelper::HasTargetInRange(float fRange)
+    {
+        std::set<int> setTargets;
+        {
+            _targetsLock.lock();
+            setTargets = m_setTargets;
+            _targetsLock.unlock();
+        }
+
+        const int iRange = (int)std::ceil(fRange);
+        for (const int& iMonsterId : setTargets)
+        {
+            int iIndex = FindCharacterIndex(iMonsterId);
+            if (iIndex == MAX_CHARACTERS_CLIENT)
+            {
+                continue;
+            }
+
+            CHARACTER* pTarget = &CharactersClient[iIndex];
+            if (!IsMonster(pTarget) || pTarget->Dead > 0)
+            {
+                continue;
+            }
+
+            if (ComputeDistanceFromTarget(pTarget) <= iRange)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     void CMuHelper::CleanupTargets()
@@ -564,6 +610,52 @@ namespace MUHelper
     }
 
 
+    // Self-casts the Elf/Muse Elf/High Elf "Swell Life" HP buff whenever it's
+    // missing. Independent of the generic aiBuff slots so it can't be
+    // accidentally left uncovered by a party-buff rotation, and gated to the
+    // Elf class line since Swell Life isn't a skill other classes can learn.
+    int CMuHelper::AutoBuffLifeElf()
+    {
+        if (!m_config.bAutoBuffLifeElf)
+        {
+            return 1;
+        }
+
+        if (gCharacterManager.GetBaseClass(Hero->Class) != CLASS_ELF)
+        {
+            return 1;
+        }
+
+        ActionSkillType iLifeBuffSkill = GetLifeBuffSkill();
+        if (iLifeBuffSkill == AT_SKILL_UNDEFINED)
+        {
+            return 1;
+        }
+
+        return BuffTarget(Hero, iLifeBuffSkill);
+    }
+
+    ActionSkillType CMuHelper::GetLifeBuffSkill()
+    {
+        std::vector<ActionSkillType> aiLifeBuffSkills =
+        {
+            AT_SKILL_SWELL_LIFE_PROFICIENCY,
+            AT_SKILL_SWELL_LIFE_STR,
+            AT_SKILL_SWELL_LIFE,
+        };
+
+        for (int i = 0; i < aiLifeBuffSkills.size(); i++)
+        {
+            int iSkillIndex = g_pSkillList->GetSkillIndex(aiLifeBuffSkills[i]);
+            if (iSkillIndex != -1)
+            {
+                return aiLifeBuffSkills[i];
+            }
+        }
+
+        return AT_SKILL_UNDEFINED;
+    }
+
     int CMuHelper::ConsumePotion()
     {
         int64_t iLife = CharacterAttribute->Life;
@@ -763,13 +855,29 @@ namespace MUHelper
             return SimulateComboAttack();
         }
 
-        m_iCurrentSkill = SelectAttackSkill();
-        if (m_iCurrentSkill > AT_SKILL_UNDEFINED)
+        // GameLogic::Combat::ExecuteSkill() (SkillExecution.cpp) silently no-ops
+        // unless Hero->Object.CurrentAction is one of a fixed set of "standing"
+        // states. Every hit the hero takes resets CurrentAction to PLAYER_SHOCK
+        // (SetPlayerShock in ZzzCharacter.cpp), which isn't in that set. While
+        // surrounded and getting hit back-to-back, CurrentAction can sit on
+        // PLAYER_SHOCK almost continuously, so the configured skill silently
+        // fails every tick -- and since SimulateAttack() below already commits to
+        // it and returns, the basic-attack fallback is never reached either, even
+        // when enabled. Basic attacks go through Action() instead, which has no
+        // such CurrentAction restriction, so skip the skill attempt entirely
+        // while staggered and fall straight through to the fallback.
+        const bool bHeroStaggered = (Hero->Object.CurrentAction == PLAYER_SHOCK);
+
+        if (!bHeroStaggered)
         {
-            const float fSkillDistance = gSkillManager.GetSkillDistance(m_iCurrentSkill, Hero);
-            if (GameLogic::Combat::CanExecuteSkill(Hero, m_iCurrentSkill, fSkillDistance))
+            m_iCurrentSkill = SelectAttackSkill();
+            if (m_iCurrentSkill > AT_SKILL_UNDEFINED)
             {
-                return SimulateAttack(m_iCurrentSkill);
+                const float fSkillDistance = gSkillManager.GetSkillDistance(m_iCurrentSkill, Hero);
+                if (GameLogic::Combat::CanExecuteSkill(Hero, m_iCurrentSkill, fSkillDistance))
+                {
+                    return SimulateAttack(m_iCurrentSkill);
+                }
             }
         }
 
@@ -892,6 +1000,56 @@ namespace MUHelper
         return SimulateSkill(iSkill, true, m_iCurrentTarget);
     }
 
+    // Checks whether TargetX/TargetY (already set by the caller from the target's
+    // position) is within fRange of the hero, attacking in place if so. Otherwise
+    // moves up to 2 tiles closer and returns false so the caller waits a tick.
+    //
+    // The near check runs before pathfinding on purpose: PathFinding2 walks the
+    // full route to the target's exact tile, and when the hero is boxed in by a
+    // crowd of monster bodies that route can fail to resolve even though the
+    // target is already within melee/cast range. Checking range first means a
+    // target that's already reachable gets attacked immediately instead of being
+    // dropped over a path search it never needed.
+    bool CMuHelper::TryApproachTarget(int iTarget, float fRange)
+    {
+        const bool bTargetNear = CheckTile(Hero, &Hero->Object, fRange);
+        if (bTargetNear)
+        {
+            if (!CheckWall(Hero->PositionX, Hero->PositionY, TargetX, TargetY))
+            {
+                DeleteTarget(iTarget);
+                return false;
+            }
+
+            return true;
+        }
+
+        PATH_t tempPath;
+        if (!PathFinding2(Hero->PositionX, Hero->PositionY, TargetX, TargetY, &tempPath, m_iHuntingDistance + fRange))
+        {
+            DeleteTarget(iTarget);
+            return false;
+        }
+
+        Hero->Path.Lock.lock();
+
+        // Limit movement to 2 steps at a time.
+        const int pathNum = std::min<int>(tempPath.PathNum, 2);
+        for (int i = 0; i < pathNum; i++)
+        {
+            Hero->Path.PathX[i] = tempPath.PathX[i];
+            Hero->Path.PathY[i] = tempPath.PathY[i];
+        }
+        Hero->Path.PathNum = pathNum;
+        Hero->Path.CurrentPath = 0;
+        Hero->Path.CurrentPathFloat = 0;
+
+        Hero->Path.Lock.unlock();
+
+        SendMove(Hero, &Hero->Object);
+        return false;
+    }
+
     int CMuHelper::SimulateSkill(ActionSkillType iSkill, bool bTargetRequired, int iTarget)
     {
         // Let the current swing finish before issuing another action, so the
@@ -905,7 +1063,18 @@ namespace MUHelper
         g_MovementSkill.m_bMagic = true;
 
         const float fSkillDistance = gSkillManager.GetSkillDistance(iSkill, Hero);
-        const bool bSelfPositionSkill = IsSelfPositionSkill(iSkill);
+        // bAoeAutoAttack extends the self-position treatment to a verified
+        // whitelist of area skills, so the helper holds its ground and keeps
+        // swinging like the old MU autoclick instead of chasing one specific
+        // monster's tile. It only kicks in once something is actually within
+        // the skill's radius (HasTargetInRange) -- otherwise there'd be
+        // nothing to hit by standing still, and the character would never
+        // close in on a lone monster to start farming in the first place.
+        // With nothing in range, this falls through to the normal chase
+        // branch below like the rest of the helper, until it gets close
+        // enough to hold position again. See IsAreaOfEffectSkill.
+        const bool bSelfPositionSkill = IsSelfPositionSkill(iSkill)
+            || (m_config.bAoeAutoAttack && IsAreaOfEffectSkill(iSkill) && HasTargetInRange(fSkillDistance));
 
         if (bTargetRequired)
         {
@@ -928,6 +1097,13 @@ namespace MUHelper
                             DeleteTarget(iTarget);
                             return 0;
                         }
+
+                        // Non-Wizard classes (e.g. Twisting Slash/Cyclone) route
+                        // through ExecuteSkill -> SkillWarrior/SkillElf, which
+                        // resolve the swing off the *global* SelectedCharacter
+                        // rather than g_MovementSkill.m_iTarget above. Without
+                        // this, CastWarriorSkill bails out immediately.
+                        SelectedCharacter = iCharIndex;
                     }
                     else
                     {
@@ -964,42 +1140,8 @@ namespace MUHelper
                 TargetX = (int)(pTarget->Object.Position[0] / TERRAIN_SCALE);
                 TargetY = (int)(pTarget->Object.Position[1] / TERRAIN_SCALE);
 
-                PATH_t tempPath;
-                bool bHasPath = PathFinding2(Hero->PositionX, Hero->PositionY, TargetX, TargetY, &tempPath, m_iHuntingDistance + fSkillDistance);
-                
-                // Target not reachable, ignore it
-                if (!bHasPath)
+                if (!TryApproachTarget(iTarget, fSkillDistance))
                 {
-                    DeleteTarget(iTarget);
-                    return 0;
-                }
-
-                const bool bTargetNear = CheckTile(Hero, &Hero->Object, fSkillDistance);
-                if (bTargetNear && !CheckWall(Hero->PositionX, Hero->PositionY, TargetX, TargetY))
-                {
-                    DeleteTarget(iTarget);
-                    return 0;
-                }
-
-                // Target is not yet in range, move closer.
-                if (!bTargetNear)
-                {
-                    Hero->Path.Lock.lock();
-
-                    // Limit movement to 2 steps at a time
-                    int pathNum = std::min<int>(tempPath.PathNum, 2);
-                    for (int i = 0; i < pathNum; i++)
-                    {
-                        Hero->Path.PathX[i] = tempPath.PathX[i];
-                        Hero->Path.PathY[i] = tempPath.PathY[i];
-                    }
-                    Hero->Path.PathNum = pathNum;
-                    Hero->Path.CurrentPath = 0;
-                    Hero->Path.CurrentPathFloat = 0;
-
-                    Hero->Path.Lock.unlock();
-
-                    SendMove(Hero, &Hero->Object);
                     return 0;
                 }
             }
@@ -1066,37 +1208,8 @@ namespace MUHelper
         TargetX = (int)(pTarget->Object.Position[0] / TERRAIN_SCALE);
         TargetY = (int)(pTarget->Object.Position[1] / TERRAIN_SCALE);
 
-        PATH_t tempPath;
-        const bool bHasPath = PathFinding2(Hero->PositionX, Hero->PositionY, TargetX, TargetY, &tempPath, m_iHuntingDistance + fRange);
-        if (!bHasPath)
+        if (!TryApproachTarget(iTarget, fRange))
         {
-            DeleteTarget(iTarget);
-            return 0;
-        }
-
-        const bool bTargetNear = CheckTile(Hero, &Hero->Object, fRange);
-        if (bTargetNear && !CheckWall(Hero->PositionX, Hero->PositionY, TargetX, TargetY))
-        {
-            DeleteTarget(iTarget);
-            return 0;
-        }
-
-        // Target is not yet in range, move closer.
-        if (!bTargetNear)
-        {
-            Hero->Path.Lock.lock();
-            const int pathNum = std::min<int>(tempPath.PathNum, 2);
-            for (int i = 0; i < pathNum; i++)
-            {
-                Hero->Path.PathX[i] = tempPath.PathX[i];
-                Hero->Path.PathY[i] = tempPath.PathY[i];
-            }
-            Hero->Path.PathNum = pathNum;
-            Hero->Path.CurrentPath = 0;
-            Hero->Path.CurrentPathFloat = 0;
-            Hero->Path.Lock.unlock();
-
-            SendMove(Hero, &Hero->Object);
             return 0;
         }
 
@@ -1191,6 +1304,26 @@ namespace MUHelper
             iSkill == AT_SKILL_INFERNO ||
             iSkill == AT_SKILL_INFERNO_STR ||
             iSkill == AT_SKILL_INFERNO_STR_MG
+        );
+    }
+
+    // Self-centered "hold position and swing" area skills, gated behind
+    // bAoeAutoAttack (see SimulateSkill). Deliberately a short, conservative
+    // list: only skills confirmed (via UseSkillWarrior in SkillCast.cpp) to
+    // damage everything around the character's own tile, not single-target
+    // or projectile skills that happen to share the same network packet.
+    bool CMuHelper::IsAreaOfEffectSkill(ActionSkillType iSkill)
+    {
+        return (
+            iSkill == AT_SKILL_TWISTING_SLASH ||
+            iSkill == AT_SKILL_TWISTING_SLASH_STR ||
+            iSkill == AT_SKILL_TWISTING_SLASH_STR_MG ||
+            iSkill == AT_SKILL_TWISTING_SLASH_MASTERY ||
+            iSkill == AT_SKILL_CYCLONE ||
+            iSkill == AT_SKILL_CYCLONE_STR ||
+            iSkill == AT_SKILL_CYCLONE_STR_MG ||
+            iSkill == AT_SKILL_FIRE_SLASH ||
+            iSkill == AT_SKILL_FIRE_SLASH_STR
         );
     }
 
