@@ -95,7 +95,7 @@ namespace MUHelper
 		bool bPickExtraItems = false;
 		std::set<std::wstring> aExtraItems;
 
-		// Client-local settings (byte index 33, bits 0-3).
+		// Client-local settings (byte index 33, bits 0-6).
 		// The server (OpenMU) stores MuHelperConfiguration as byte[] echoed
 		// unchanged. It does not parse or enforce these bits. Adding new bits
 		// in unused positions is safe. However, changing existing bits will
@@ -122,6 +122,17 @@ namespace MUHelper
 		// it's missing, independent of the generic aiBuff slots above. Only
 		// takes effect for the Elf class line (see CMuHelper::AutoBuffLife).
 		bool bAutoBuffLifeElf = false;
+
+		// Client-local settings (byte index 33, bit 6). See note above --
+		// same rules apply (safe to add, unsafe to move/remove).
+		//
+		// Auto-accepts party invites while the MU Helper is running (see
+		// CMuHelper::IsActive() gating in ReceiveParty, WSclient.cpp) - lets an
+		// unattended bot get picked up into a hunting party without a human
+		// there to click the invite dialog. Only takes effect while the
+		// helper is active; a manually-played character still sees the normal
+		// accept/decline prompt.
+		bool bAutoAcceptParty = false;
 	} ConfigData;
 
 	class ConfigDataSerDe {

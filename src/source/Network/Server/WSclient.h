@@ -3683,7 +3683,8 @@ typedef struct
     BYTE bFallbackBasicAttack : 1;           // Index: 33 (bit 3)
     BYTE bAoeAutoAttack : 1;                 // Index: 33 (bit 4)
     BYTE bAutoBuffLifeElf : 1;               // Index: 33 (bit 5)
-    BYTE : 2;                                // Unused bits of Index 33
+    BYTE bAutoAcceptParty : 1;               // Index: 33 (bit 6)
+    BYTE : 1;                                // Unused bits of Index 33
 
     BYTE _UnusedPadding[35];                 // Index: 34 (35 bytes remaining)
     char ExtraItems[12][15];                 // Index: 69

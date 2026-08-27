@@ -47,7 +47,8 @@ enum ECheckBoxId: uint16_t
     CHECKBOX_ID_DR_ATTACK_TOGETHER,
     CHECKBOX_ID_FALLBACK_BASIC_ATTACK,
     CHECKBOX_ID_AOE_AUTO_ATTACK,
-    CHECKBOX_ID_AUTO_BUFF_LIFE_ELF
+    CHECKBOX_ID_AUTO_BUFF_LIFE_ELF,
+    CHECKBOX_ID_AUTO_ACCEPT_PARTY
 };
 
 enum EButtonId : uint16_t
@@ -269,8 +270,9 @@ void CNewUIMuHelper::InitCheckBox()
 
     //--
     InsertCheckBox(IMAGE_CHECKBOX_BTN, m_Pos.x + 18, m_Pos.y + 80, 15, 15, 0, &I18N::Game::AutoAcceptFriend, CHECKBOX_ID_AUTO_ACCEPT_FRIEND, 2);
-    InsertCheckBox(IMAGE_CHECKBOX_BTN, m_Pos.x + 18, m_Pos.y + 125, 15, 15, 0, &I18N::Game::PVPCounterattack, CHECKBOX_ID_AUTO_DEFEND, 2);
+    InsertCheckBox(IMAGE_CHECKBOX_BTN, m_Pos.x + 18, m_Pos.y + 131, 15, 15, 0, &I18N::Game::PVPCounterattack, CHECKBOX_ID_AUTO_DEFEND, 2);
     InsertCheckBox(IMAGE_CHECKBOX_BTN, m_Pos.x + 18, m_Pos.y + 97, 15, 15, 0, &I18N::Game::AutoAcceptGuildMember, CHECKBOX_ID_AUTO_ACCEPT_GUILD, 2);
+    InsertCheckBox(IMAGE_CHECKBOX_BTN, m_Pos.x + 18, m_Pos.y + 114, 15, 15, 0, &I18N::Game::AutoAcceptParty, CHECKBOX_ID_AUTO_ACCEPT_PARTY, 2);
     InsertCheckBox(IMAGE_CHECKBOX_BTN, m_Pos.x + 18, m_Pos.y + 150, 15, 15, 0, &I18N::Game::AoeAutoAttack, CHECKBOX_ID_AOE_AUTO_ATTACK, 2);
     InsertCheckBox(IMAGE_CHECKBOX_BTN, m_Pos.x + 18, m_Pos.y + 175, 15, 15, 0, &I18N::Game::AutoBuffLifeElf, CHECKBOX_ID_AUTO_BUFF_LIFE_ELF, 2);
 
@@ -293,6 +295,7 @@ void CNewUIMuHelper::InitCheckBox()
     RegisterBoxCharacter(0xFF, CHECKBOX_ID_AUTO_ACCEPT_GUILD);
     RegisterBoxCharacter(0xFF, CHECKBOX_ID_FALLBACK_BASIC_ATTACK);
     RegisterBoxCharacter(0xFF, CHECKBOX_ID_AOE_AUTO_ATTACK);
+    RegisterBoxCharacter(0xFF, CHECKBOX_ID_AUTO_ACCEPT_PARTY);
 
     RegisterBoxCharacter(Dark_Knight, CHECKBOX_ID_SKILL3_DELAY);
     RegisterBoxCharacter(Dark_Knight, CHECKBOX_ID_SKILL3_CONDITION);
@@ -912,6 +915,10 @@ void CNewUIMuHelper::ApplyConfigFromCheckbox(int iCheckboxId, bool bState)
         _TempConfig.bAutoBuffLifeElf = bState;
         break;
 
+    case CHECKBOX_ID_AUTO_ACCEPT_PARTY:
+        _TempConfig.bAutoAcceptParty = bState;
+        break;
+
     default:
         break;
     }
@@ -1121,6 +1128,7 @@ void CNewUIMuHelper::ApplyConfig()
     m_CheckBoxList[CHECKBOX_ID_FALLBACK_BASIC_ATTACK].box->RegisterBoxState(_TempConfig.bFallbackBasicAttack);
     m_CheckBoxList[CHECKBOX_ID_AOE_AUTO_ATTACK].box->RegisterBoxState(_TempConfig.bAoeAutoAttack);
     m_CheckBoxList[CHECKBOX_ID_AUTO_BUFF_LIFE_ELF].box->RegisterBoxState(_TempConfig.bAutoBuffLifeElf);
+    m_CheckBoxList[CHECKBOX_ID_AUTO_ACCEPT_PARTY].box->RegisterBoxState(_TempConfig.bAutoAcceptParty);
 
     m_ItemFilter.Clear();
     for (const auto& item : _TempConfig.aExtraItems)

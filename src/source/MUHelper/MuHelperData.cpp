@@ -146,6 +146,7 @@ namespace MUHelper
 		netData.bFallbackBasicAttack = gameData.bFallbackBasicAttack ? 1 : 0;
 		netData.bAoeAutoAttack = gameData.bAoeAutoAttack ? 1 : 0;
 		netData.bAutoBuffLifeElf = gameData.bAutoBuffLifeElf ? 1 : 0;
+		netData.bAutoAcceptParty = gameData.bAutoAcceptParty ? 1 : 0;
 	}
 
 	void ConfigDataSerDe::Deserialize(const PRECEIVE_MUHELPER_DATA& netData, ConfigData& gameData)
@@ -239,6 +240,7 @@ namespace MUHelper
 		gameData.bFallbackBasicAttack = (bool)netData.bFallbackBasicAttack;
 		gameData.bAoeAutoAttack = (bool)netData.bAoeAutoAttack;
 		gameData.bAutoBuffLifeElf = (bool)netData.bAutoBuffLifeElf;
+		gameData.bAutoAcceptParty = (bool)netData.bAutoAcceptParty;
 	}
 
 }
