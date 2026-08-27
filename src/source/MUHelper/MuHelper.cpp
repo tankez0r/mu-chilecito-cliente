@@ -1303,7 +1303,19 @@ namespace MUHelper
             iSkill == AT_SKILL_HELL_FIRE_STR ||
             iSkill == AT_SKILL_INFERNO ||
             iSkill == AT_SKILL_INFERNO_STR ||
-            iSkill == AT_SKILL_INFERNO_STR_MG
+            iSkill == AT_SKILL_INFERNO_STR_MG ||
+            // Evil Spirit and Storm fire from the caster's own tile just like
+            // Hell Fire/Inferno above (see ClassAttack.cpp's shared
+            // AT_SKILL_STORM/AT_SKILL_EVIL_SPIRIT case, both call
+            // SendRequestMagicContinue(Skill, c->PositionX, c->PositionY, ...)),
+            // so they belong in the same self-position bucket. Missing this
+            // made the helper treat Evil Spirit as a melee-style skill that
+            // needs to path-approach the tracked target's tile, which is
+            // exactly the "freezes when surrounded" bug for anyone using it.
+            iSkill == AT_SKILL_EVIL_SPIRIT ||
+            iSkill == AT_SKILL_EVIL_SPIRIT_STR ||
+            iSkill == AT_SKILL_EVIL_SPIRIT_STR_MG ||
+            iSkill == AT_SKILL_STORM
         );
     }
 
