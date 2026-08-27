@@ -21,6 +21,7 @@
 extern int DeleteIndex;
 extern int AppointStatus;
 extern bool LogOut;
+extern bool g_bAutoRequestOk;
 
 char AppointType;
 
@@ -2465,6 +2466,7 @@ CALLBACK_RESULT SEASON3B::CSystemMenuMsgBox::ChooseCharacterBtnDown(class CNewUI
     else
     {
         MUHelper::g_MuHelper.TriggerStop();
+        g_bAutoRequestOk = false;
         g_pNewUIMng->ResetActiveUIObj();
         LogOut = true;SocketClient->ToGameServer()->SendLogOut(LogOutType::BackToCharacterSelection);
         g_ConsoleDebug->Write(MCD_SEND, L"0xF1 [SendRequestLogOut] 1");

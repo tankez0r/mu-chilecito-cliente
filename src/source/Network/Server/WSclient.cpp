@@ -409,6 +409,12 @@ int FirstTime = 0;
 
 bool LogOut = false;
 
+// Toggled by the "/autorequestok" chat command (ZzzInterface.cpp::CheckCommand) -
+// auto-accepts party invites independently of the MU Helper, so it also works
+// on a manually-played character. Reset to false when returning to the
+// character selection screen (NewUICustomMessageBox.cpp::ChooseCharacterBtnDown).
+bool g_bAutoRequestOk = false;
+
 wchar_t ChatWhisperID[MAX_USERNAME_SIZE + 1];
 
 int MoveCount = 0;
@@ -7225,11 +7231,13 @@ void ReceiveParty(const BYTE* ReceiveBuffer)
     auto Data = (LPPHEADER_DEFAULT_KEY)ReceiveBuffer;
     PartyKey = ((int)(Data->KeyH) << 8) + Data->KeyL;
 
-    // Skip the accept/decline dialog while the helper is unattended and the
-    // player opted into auto-accepting party invites (Other Settings tab) -
-    // mirrors the manual "Ok" path (CPartyMsgBoxLayout::OkBtnDown) without
-    // needing a human to click it.
-    if (MUHelper::g_MuHelper.IsActive() && MUHelper::g_MuHelper.GetConfig().bAutoAcceptParty)
+    // Skip the accept/decline dialog and answer exactly like the manual "Ok"
+    // path (CPartyMsgBoxLayout::OkBtnDown) would, either because the helper
+    // is unattended and the player opted into auto-accepting party invites
+    // (Other Settings tab) or because "/autorequestok" is toggled on
+    // (works independently of the helper, for manual play too).
+    if ((MUHelper::g_MuHelper.IsActive() && MUHelper::g_MuHelper.GetConfig().bAutoAcceptParty)
+        || g_bAutoRequestOk)
     {
         SocketClient->ToGameServer()->SendPartyInviteResponse(true, PartyKey);
         return;

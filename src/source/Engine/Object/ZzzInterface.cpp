@@ -71,6 +71,7 @@ extern bool bCheckNPC;
 extern BOOL g_bWhileMovingZone;
 extern DWORD g_dwLatestZoneMoving;
 extern bool LogOut;
+extern bool g_bAutoRequestOk;
 extern int DirTable[16];
 
 extern BOOL g_bUseWindowMode;
@@ -1962,6 +1963,15 @@ bool CheckCommand(wchar_t* Text, bool bMacroText)
             iTextSize = i;
         }
         Name[iTextSize] = 0;
+
+        if (wcsicmp(Name, L"/autorequestok") == 0)
+        {
+            g_bAutoRequestOk = !g_bAutoRequestOk;
+            g_pSystemLogBox->AddText(
+                g_bAutoRequestOk ? L"autorequest is activated" : L"autorequest is deactivated",
+                SEASON3B::TYPE_SYSTEM_MESSAGE);
+            return true;
+        }
 
         if (!g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_STORAGE))
         {
