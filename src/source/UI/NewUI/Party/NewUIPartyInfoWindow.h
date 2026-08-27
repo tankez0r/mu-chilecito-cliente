@@ -39,14 +39,18 @@ namespace SEASON3B
             IMAGE_PARTY_HPBAR_BACK = BITMAP_PARTY_INFO_BEGIN,		// newui_party_lifebar01.jpg	(151, 8)
             IMAGE_PARTY_HPBAR,										// newui_party_lifebar02.jpg	(147, 4)
             IMAGE_PARTY_FLAG,										// newui_party_flag.tga			(10, 12)
-            IMAGE_PARTY_EXIT,										// newui_Party_x.tga			(13, 26)	// ÀÓ½Ã
+            IMAGE_PARTY_EXIT,										// newui_Party_x.tga			(13, 26)	// ï¿½Ó½ï¿½
         };
 
     private:
         enum PARTY_WINDOW_SIZE
         {
             PARTY_INFO_WINDOW_WIDTH = 190,
-            PARTY_INFO_WINDOW_HEIGHT = 429,
+            // 63 (header) + one 71px row per MAX_PARTYS member + 11 (footer margin).
+            // Was a literal 429, which is this same formula at MAX_PARTYS == 5;
+            // deriving it keeps the frame (a stretchable 9-slice, see Render())
+            // tall enough for every row RenderMemberStatue() lays out at i*71.
+            PARTY_INFO_WINDOW_HEIGHT = 63 + (MAX_PARTYS * 71) + 11,
         };
 
     private:
@@ -54,10 +58,10 @@ namespace SEASON3B
         POINT						m_Pos;
 
         // Exit Button
-        CNewUIButton				m_BtnExit;							// ÆÄÆ¼Ã¢ ³ª°¡±â¹öÆ°
-        CNewUIButton				m_BtnPartyExit[MAX_PARTYS];			// ÆÄÆ¼Å»Åð¹öÆ°
+        CNewUIButton				m_BtnExit;							// ï¿½ï¿½Æ¼Ã¢ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ°
+        CNewUIButton				m_BtnPartyExit[MAX_PARTYS];			// ï¿½ï¿½Æ¼Å»ï¿½ï¿½ï¿½Æ°
 
-        int							m_iSelectedCharID;		// Party List¿¡¼­ Ä³¸¯ÅÍ ID¸¦ ¼±ÅÃ (default : -1)
+        int							m_iSelectedCharID;		// Party Listï¿½ï¿½ï¿½ï¿½ Ä³ï¿½ï¿½ï¿½ï¿½ IDï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (default : -1)
 
         bool						m_bParty;
 
@@ -82,7 +86,7 @@ namespace SEASON3B
         void OpenningProcess();
         void ClosingProcess();
 
-        bool LeaveParty(const int iIndex);	// ÆÄÆ¼ÀåÀÌ »ó´ë¹æÀ» °­Åð
+        bool LeaveParty(const int iIndex);	// ï¿½ï¿½Æ¼ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 
         void SetParty(bool bParty);
 
