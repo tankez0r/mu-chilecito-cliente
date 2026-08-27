@@ -109,6 +109,7 @@ namespace MUHelper
         m_iCurrentTarget = -1;
         m_iCurrentSkill = (ActionSkillType)m_config.aiSkill[0];
         m_iCurrentItem = MAX_ITEMS;
+        m_iItemApproachAttempts = 0;
         m_posOriginal = { Hero->PositionX, Hero->PositionY };
 
         m_iHuntingDistance = ComputeDistanceByRange(m_config.iHuntingRange);
@@ -116,6 +117,7 @@ namespace MUHelper
 
         m_iSecondsElapsed = 0;
         m_iSecondsAway = 0;
+        m_iRegroupApproachAttempts = 0;
 
         m_bTimerActivatedBuffOngoing = false;
         m_bPetActivated = false;
@@ -1012,6 +1014,23 @@ namespace MUHelper
     // dropped over a path search it never needed.
     bool CMuHelper::TryApproachTarget(int iTarget, float fRange)
     {
+        // AOE mode's whole point is to stand and fight instead of chasing one
+        // specific monster's exact tile - but this function is also the one
+        // SimulateBasicAttack() calls unconditionally as the fallback attack,
+        // and the one a non-self-position skill's targeted branch calls. Both
+        // used to ignore AOE mode entirely and path straight at iTarget's
+        // tile, which is exactly what "sigue buscando moverse" was: whenever
+        // the primary skill couldn't fire (no mana, wrong tick) and fell back
+        // to a basic attack, or whenever iTarget wasn't the closest monster in
+        // the crowd, the character walked off instead of holding position.
+        // Something already being in range is reason enough to stay put and
+        // swing at whatever that is, regardless of which specific target this
+        // call was aiming for.
+        if (m_config.bAoeAutoAttack && HasTargetInRange(fRange))
+        {
+            return true;
+        }
+
         const bool bTargetNear = CheckTile(Hero, &Hero->Object, fRange);
         if (bTargetNear)
         {
@@ -1082,18 +1101,20 @@ namespace MUHelper
         g_MovementSkill.m_bMagic = true;
 
         const float fSkillDistance = gSkillManager.GetSkillDistance(iSkill, Hero);
-        // bAoeAutoAttack extends the self-position treatment to a verified
-        // whitelist of area skills, so the helper holds its ground and keeps
-        // swinging like the old MU autoclick instead of chasing one specific
-        // monster's tile. It only kicks in once something is actually within
-        // the skill's radius (HasTargetInRange) -- otherwise there'd be
-        // nothing to hit by standing still, and the character would never
-        // close in on a lone monster to start farming in the first place.
-        // With nothing in range, this falls through to the normal chase
-        // branch below like the rest of the helper, until it gets close
-        // enough to hold position again. See IsAreaOfEffectSkill.
+        // bAoeAutoAttack extends the self-position treatment to whichever
+        // skill is actually configured -- not just a fixed whitelist of area
+        // skills -- so the helper holds its ground and keeps swinging in
+        // place like the old MU autoclick instead of chasing one specific
+        // monster's tile, no matter which skill the player picked. It only
+        // kicks in once something is actually within the skill's radius
+        // (HasTargetInRange) -- otherwise there'd be nothing to hit by
+        // standing still, and the character would never close in on a lone
+        // monster to start farming in the first place. With nothing in
+        // range, this falls through to the normal chase branch below like
+        // the rest of the helper, until it gets close enough to hold
+        // position again.
         const bool bSelfPositionSkill = IsSelfPositionSkill(iSkill)
-            || (m_config.bAoeAutoAttack && IsAreaOfEffectSkill(iSkill) && HasTargetInRange(fSkillDistance));
+            || (m_config.bAoeAutoAttack && HasTargetInRange(fSkillDistance));
 
         if (bTargetRequired)
         {
@@ -1250,9 +1271,24 @@ namespace MUHelper
         {
             if (!SimulateMove(m_posOriginal))
             {
+                // Same failure shape as ObtainItem()/buffs-while-staggered: if the
+                // path back to the original spot is blocked (e.g. by the mobs the
+                // helper is fighting right now), returning 0 forever would stall
+                // Attack() indefinitely while the character just stands there
+                // wanting to go home. Give up for a couple of ticks and let
+                // combat continue; m_iSecondsAway stays set, so regroup is
+                // retried again right after this short break.
+                constexpr int MAX_REGROUP_ATTEMPTS = 2;
+                if (++m_iRegroupApproachAttempts > MAX_REGROUP_ATTEMPTS)
+                {
+                    m_iRegroupApproachAttempts = 0;
+                    return 1;
+                }
+
                 return 0;
             }
 
+            m_iRegroupApproachAttempts = 0;
             m_iSecondsAway = 0;
             m_iComboState = 0;
             m_iCurrentTarget = -1;
@@ -1387,6 +1423,8 @@ namespace MUHelper
             {
                 return 1;
             }
+
+            m_iItemApproachAttempts = 0;
         }
 
         ITEM_t* pDrop = &Items[m_iCurrentItem];
@@ -1405,6 +1443,19 @@ namespace MUHelper
         {
             if (!CheckTile(Hero, &Hero->Object, 2.0f))
             {
+                // Give up on this item after a couple of blocked attempts (e.g. a
+                // mob crowd standing between the hero and the drop) instead of
+                // stalling forever: Work() bails out on a 0 here, so an
+                // unreachable drop would otherwise block Regroup()/Attack() from
+                // ever running again and freeze combat entirely -- the same
+                // failure shape already fixed for buffs/heals while staggered.
+                constexpr int MAX_ITEM_APPROACH_ATTEMPTS = 2;
+                if (++m_iItemApproachAttempts > MAX_ITEM_APPROACH_ATTEMPTS)
+                {
+                    DeleteItem(m_iCurrentItem);
+                    return 1;
+                }
+
                 if (PathFinding2((Hero->PositionX), (Hero->PositionY), TargetX, TargetY, &Hero->Path))
                 {
                     SendMove(Hero, &Hero->Object);

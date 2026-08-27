@@ -87,6 +87,7 @@ namespace MUHelper
 		std::set<int> m_setTargetsAttacking;
 		std::set<int> m_setItems;
 		int m_iCurrentItem;
+		int m_iItemApproachAttempts;
 		int m_iCurrentTarget;
 		int m_iCurrentBuffIndex;
 		int m_iCurrentBuffPartyIndex;
@@ -98,6 +99,7 @@ namespace MUHelper
 		int m_iLoopCounter;
 		int m_iSecondsElapsed;
 		int m_iSecondsAway;
+		int m_iRegroupApproachAttempts;
 		bool m_bTimerActivatedBuffOngoing;
 		bool m_bPetActivated;
 		int m_iTotalCost;
