@@ -12193,6 +12193,10 @@
     <value>Aceptación automática - Miembro del gremio</value>
     <comment>legacy_id=3592</comment>
   </data>
+  <data name="Auto accept - Party" xml:space="preserve">
+    <value>Aceptación automática - Grupo</value>
+    <comment>legacy_id=3811</comment>
+  </data>
   <data name="PVP Counterattack" xml:space="preserve">
     <value>Contraataque JcJ</value>
     <comment>legacy_id=3593</comment>

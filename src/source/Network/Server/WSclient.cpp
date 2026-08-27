@@ -7225,6 +7225,16 @@ void ReceiveParty(const BYTE* ReceiveBuffer)
     auto Data = (LPPHEADER_DEFAULT_KEY)ReceiveBuffer;
     PartyKey = ((int)(Data->KeyH) << 8) + Data->KeyL;
 
+    // Skip the accept/decline dialog while the helper is unattended and the
+    // player opted into auto-accepting party invites (Other Settings tab) -
+    // mirrors the manual "Ok" path (CPartyMsgBoxLayout::OkBtnDown) without
+    // needing a human to click it.
+    if (MUHelper::g_MuHelper.IsActive() && MUHelper::g_MuHelper.GetConfig().bAutoAcceptParty)
+    {
+        SocketClient->ToGameServer()->SendPartyInviteResponse(true, PartyKey);
+        return;
+    }
+
     SEASON3B::CreateMessageBox(MSGBOX_LAYOUT_CLASS(SEASON3B::CPartyMsgBoxLayout));
 }
 

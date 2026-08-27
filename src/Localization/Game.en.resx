@@ -12213,6 +12213,10 @@
     <value>Auto accept - Guild Member</value>
     <comment>legacy_id=3592</comment>
   </data>
+  <data name="Auto accept - Party" xml:space="preserve">
+    <value>Auto accept - Party</value>
+    <comment>legacy_id=3811</comment>
+  </data>
   <data name="PVP Counterattack" xml:space="preserve">
     <value>PVP Counterattack</value>
     <comment>legacy_id=3593</comment>
