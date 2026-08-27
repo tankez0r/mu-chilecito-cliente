@@ -30,6 +30,9 @@ SeedCrafting = 11, ///< The storage of the seed crafting dialog.
 SeedSphereCrafting = 12, ///< The storage of the seed sphere crafting dialog.
 SeedMountCrafting = 13, ///< The storage of the seed sphere mount dialog.
 SeedUnmountCrafting = 14, ///< The storage of the seed sphere unmount dialog.
+Vault2 = 15, ///< The second vault storage tab (mu-chilecito multi-tab vault feature).
+Vault3 = 16, ///< The third vault storage tab (mu-chilecito multi-tab vault feature).
+Vault4 = 17, ///< The fourth vault storage tab (mu-chilecito multi-tab vault feature).
 };
 
 enum class LegacyQuestState : uint32_t

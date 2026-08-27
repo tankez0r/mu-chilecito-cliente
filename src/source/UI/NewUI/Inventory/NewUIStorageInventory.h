@@ -47,6 +47,17 @@ namespace SEASON3B
             MAX_BTN
         };
 
+        // Multi-tab vault (mu-chilecito feature): the 4 tabs are 4 fully independent
+        // server-side ItemStorage rows (see ItemStorageKind.Vault2/3/4), but the
+        // client only ever needs ONE CNewUIInventoryCtrl - switching tabs sends
+        // VaultTabSelectRequest, and the server always answers through the same
+        // "show items of the currently open storage" packet this control already
+        // knows how to consume (ProcessToReceiveStorageItems), so it just gets
+        // cleared and repopulated in place.
+        static constexpr int VAULT_TAB_COUNT = 4;
+        CNewUIButton			m_aTabBtn[VAULT_TAB_COUNT];
+        int						m_iActiveTab;
+
         CNewUIManager* m_pNewUIMng;
         POINT					m_Pos;
         CNewUIButton			m_abtn[MAX_BTN];
@@ -130,6 +141,8 @@ namespace SEASON3B
         void ProcessInventoryCtrl();
         bool ProcessBtns();
         void ProcessStorageItemAutoMove();
+        void InitTabButtons();
+        bool ProcessTabBtns();
     };
 }
 
