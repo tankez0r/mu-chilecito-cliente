@@ -1052,6 +1052,25 @@ namespace MUHelper
 
     int CMuHelper::SimulateSkill(ActionSkillType iSkill, bool bTargetRequired, int iTarget)
     {
+        // GameLogic::Combat::ExecuteSkill() (SkillExecution.cpp) silently no-ops
+        // unless Hero->Object.CurrentAction is one of a fixed set of "standing"
+        // states, and PLAYER_SHOCK (set on every hit the hero takes, see
+        // SetPlayerShock in ZzzCharacter.cpp) isn't in that set. Without this
+        // check, a buff/heal/drain-life attempt made while getting hit
+        // repeatedly would silently fail here and return 0 forever - and since
+        // every Work() stage that calls SimulateSkill (AutoBuffLifeElf, Buff,
+        // Heal) treats a 0 as "wait, try again next tick" and bails out of the
+        // whole tick, Attack() (which already has its own staggered fallback
+        // to a basic attack) would never even be reached. The character would
+        // stand there taking hits forever, unable to buff, heal, or fight
+        // back. Reporting success instead lets Work() fall through to Attack()
+        // right away; the skipped buff/heal just retries next tick once the
+        // hero is no longer staggered.
+        if (Hero->Object.CurrentAction == PLAYER_SHOCK)
+        {
+            return 1;
+        }
+
         // Let the current swing finish before issuing another action, so the
         // cadence tracks AttackSpeed instead of the fixed helper timer.
         if (IsHeroSwingInProgress())
