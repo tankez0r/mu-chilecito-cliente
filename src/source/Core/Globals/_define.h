@@ -138,7 +138,7 @@ enum EPathDirection
 #define MAX_MARKS   2000
 #define MARK_EDIT   1999
 
-#define MAX_PARTYS   5
+#define MAX_PARTYS   7
 
 #define TRADE_BUY    0
 #define TRADE_SELL   1
