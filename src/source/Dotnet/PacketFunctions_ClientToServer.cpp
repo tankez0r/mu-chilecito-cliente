@@ -228,9 +228,9 @@ void PacketFunctions_ClientToServer::SendCastleSiegeTaxInfoRequest()
     dotnet_SendCastleSiegeTaxInfoRequest(this->GetHandle());
 }
 
-void PacketFunctions_ClientToServer::SendCastleSiegeTaxChangeRequest(BYTE taxType, uint32_t taxRate)
+void PacketFunctions_ClientToServer::SendCastleSiegeTaxChangeRequest(CastleSiegeTaxType taxType, uint32_t taxValue)
 {
-    dotnet_SendCastleSiegeTaxChangeRequest(this->GetHandle(), taxType, taxRate);
+    dotnet_SendCastleSiegeTaxChangeRequest(this->GetHandle(), taxType, taxValue);
 }
 
 void PacketFunctions_ClientToServer::SendCastleSiegeTaxMoneyWithdraw(uint32_t amount)
@@ -238,12 +238,12 @@ void PacketFunctions_ClientToServer::SendCastleSiegeTaxMoneyWithdraw(uint32_t am
     dotnet_SendCastleSiegeTaxMoneyWithdraw(this->GetHandle(), amount);
 }
 
-void PacketFunctions_ClientToServer::SendToggleCastleGateRequest(BYTE closeState, uint16_t gateId)
+void PacketFunctions_ClientToServer::SendToggleCastleGateRequest(BYTE isOpen, uint16_t gateId)
 {
-    dotnet_SendToggleCastleGateRequest(this->GetHandle(), closeState, gateId);
+    dotnet_SendToggleCastleGateRequest(this->GetHandle(), isOpen, gateId);
 }
 
-void PacketFunctions_ClientToServer::SendCastleGuildCommand(BYTE team, BYTE positionX, BYTE positionY, BYTE command)
+void PacketFunctions_ClientToServer::SendCastleGuildCommand(BYTE team, BYTE positionX, BYTE positionY, CastleSiegeGuildCommandType command)
 {
     dotnet_SendCastleGuildCommand(this->GetHandle(), team, positionX, positionY, command);
 }
@@ -416,6 +416,11 @@ void PacketFunctions_ClientToServer::SendVaultClosed()
 void PacketFunctions_ClientToServer::SendVaultMoveMoneyRequest(VaultMoneyMoveDirection direction, uint32_t amount)
 {
     dotnet_SendVaultMoveMoneyRequest(this->GetHandle(), direction, amount);
+}
+
+void PacketFunctions_ClientToServer::SendVaultTabSelectRequest(BYTE tabIndex)
+{
+    dotnet_SendVaultTabSelectRequest(this->GetHandle(), tabIndex);
 }
 
 void PacketFunctions_ClientToServer::SendLahapJewelMixRequest(MixType operation, ItemType item, StackSize mixingStackSize, BYTE unmixingSourceSlot)
@@ -971,4 +976,9 @@ void PacketFunctions_ClientToServer::SendDuelChannelJoinRequest(BYTE channelId)
 void PacketFunctions_ClientToServer::SendDuelChannelQuitRequest()
 {
     dotnet_SendDuelChannelQuitRequest(this->GetHandle());
+}
+
+void PacketFunctions_ClientToServer::SendChatCommandListRequest()
+{
+    dotnet_SendChatCommandListRequest(this->GetHandle());
 }

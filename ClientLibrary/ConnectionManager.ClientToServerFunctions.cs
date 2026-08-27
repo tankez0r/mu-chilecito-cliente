@@ -1570,14 +1570,14 @@ public unsafe partial class ConnectionManager
     /// Sends a <see cref="CastleSiegeTaxChangeRequest" /> to this connection.
     /// </summary>
     /// <param name="handle">The handle of the connection.</param>
-    /// <param name="taxType">0=Undefined, 1=ChaosMachine, 2 = Normal, 3 = EntranceFeeLandOfTrials</param>
-    /// <param name="taxRate">The tax rate.</param>
+    /// <param name="taxType">The tax type.</param>
+    /// <param name="taxValue">The percentage rate for shop and Chaos Machine taxes, or the entrance fee amount for the hunting zone.</param>
     /// <remarks>
     /// Is sent by the client when: The guild master wants to change the tax rate in the castle npc.
     /// Causes reaction on server side: The server changes the tax rates accordingly.
     /// </remarks>
     [UnmanagedCallersOnly(EntryPoint = "SendCastleSiegeTaxChangeRequest")]
-    public static void SendCastleSiegeTaxChangeRequest(int handle, byte @taxType, uint @taxRate)
+    public static void SendCastleSiegeTaxChangeRequest(int handle, CastleSiegeTaxType @taxType, uint @taxValue)
     {
         if (!Connections.TryGetValue(handle, out var connection))
         {
@@ -1591,7 +1591,7 @@ public unsafe partial class ConnectionManager
                 var length = CastleSiegeTaxChangeRequestRef.Length;
                 var packet = new CastleSiegeTaxChangeRequestRef(pipeWriter.GetSpan(length)[..length]);
                 packet.TaxType = @taxType;
-                packet.TaxRate = @taxRate;
+                packet.TaxValue = @taxValue;
 
                 return length;
             });
@@ -1640,14 +1640,14 @@ public unsafe partial class ConnectionManager
     /// Sends a <see cref="ToggleCastleGateRequest" /> to this connection.
     /// </summary>
     /// <param name="handle">The handle of the connection.</param>
-    /// <param name="closeState">The close state.</param>
+    /// <param name="isOpen">The is open.</param>
     /// <param name="gateId">The gate id.</param>
     /// <remarks>
     /// Is sent by the client when: The guild member of the castle owner wants to toggle the gate switch.
     /// Causes reaction on server side: The castle gate is getting opened or closed.
     /// </remarks>
     [UnmanagedCallersOnly(EntryPoint = "SendToggleCastleGateRequest")]
-    public static void SendToggleCastleGateRequest(int handle, byte @closeState, ushort @gateId)
+    public static void SendToggleCastleGateRequest(int handle, byte @isOpen, ushort @gateId)
     {
         if (!Connections.TryGetValue(handle, out var connection))
         {
@@ -1660,7 +1660,7 @@ public unsafe partial class ConnectionManager
             {
                 var length = ToggleCastleGateRequestRef.Length;
                 var packet = new ToggleCastleGateRequestRef(pipeWriter.GetSpan(length)[..length]);
-                packet.CloseState = @closeState == 1;
+                packet.IsOpen = @isOpen == 1;
                 packet.GateId = @gateId;
 
                 return length;
@@ -1679,13 +1679,13 @@ public unsafe partial class ConnectionManager
     /// <param name="team">Team Number 0 to 7.</param>
     /// <param name="positionX">The position x.</param>
     /// <param name="positionY">The position y.</param>
-    /// <param name="command">0 = Attack, 1 = Defend, 2 = Wait</param>
+    /// <param name="command">The command.</param>
     /// <remarks>
     /// Is sent by the client when: The guild master sent a command to his guild during the castle siege event.
     /// Causes reaction on server side: The command is shown on the mini map of the guild members.
     /// </remarks>
     [UnmanagedCallersOnly(EntryPoint = "SendCastleGuildCommand")]
-    public static void SendCastleGuildCommand(int handle, byte @team, byte @positionX, byte @positionY, byte @command)
+    public static void SendCastleGuildCommand(int handle, byte @team, byte @positionX, byte @positionY, CastleSiegeGuildCommandType @command)
     {
         if (!Connections.TryGetValue(handle, out var connection))
         {
@@ -2857,6 +2857,40 @@ public unsafe partial class ConnectionManager
     }
 
     /// <summary>
+    /// Sends a <see cref="VaultTabSelectRequest" /> to this connection.
+    /// </summary>
+    /// <param name="handle">The handle of the connection.</param>
+    /// <param name="tabIndex">Zero-based vault tab index (0-3).</param>
+    /// <remarks>
+    /// Is sent by the client when: The player has the vault dialog open and clicks a different vault tab.
+    /// Causes reaction on server side: The server switches the player's active vault storage to the requested tab and re-sends its item list, money and state, the same way opening the vault dialog does.
+    /// </remarks>
+    [UnmanagedCallersOnly(EntryPoint = "SendVaultTabSelectRequest")]
+    public static void SendVaultTabSelectRequest(int handle, byte @tabIndex)
+    {
+        if (!Connections.TryGetValue(handle, out var connection))
+        {
+            return;
+        }
+
+        try
+        {
+            connection.CreateAndSend(pipeWriter =>
+            {
+                var length = VaultTabSelectRequestRef.Length;
+                var packet = new VaultTabSelectRequestRef(pipeWriter.GetSpan(length)[..length]);
+                packet.TabIndex = @tabIndex;
+
+                return length;
+            });
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex);
+        }
+    }
+
+    /// <summary>
     /// Sends a <see cref="LahapJewelMixRequest" /> to this connection.
     /// </summary>
     /// <param name="handle">The handle of the connection.</param>
@@ -3681,7 +3715,7 @@ public unsafe partial class ConnectionManager
     /// <param name="skillId">The skill id.</param>
     /// <param name="playerId">The player id.</param>
     /// <remarks>
-    /// Is sent by the client when: A player cancels a specific magic effect of a skill, usually 'Infinity Arrow' and 'Wizardy Enhance'.
+    /// Is sent by the client when: A player cancels a specific magic effect of a skill, usually 'Infinity Arrow' and 'Wizardry Enhance'.
     /// Causes reaction on server side: The effect is cancelled and an update is sent to the player and all surrounding players.
     /// </remarks>
     [UnmanagedCallersOnly(EntryPoint = "SendMagicEffectCancelRequest")]
@@ -6715,6 +6749,37 @@ public unsafe partial class ConnectionManager
             {
                 var length = DuelChannelQuitRequestRef.Length;
                 var packet = new DuelChannelQuitRequestRef(pipeWriter.GetSpan(length)[..length]);
+                return length;
+            });
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine(ex);
+        }
+    }
+
+    /// <summary>
+    /// Sends a <see cref="ChatCommandListRequest" /> to this connection.
+    /// </summary>
+    /// <param name="handle">The handle of the connection.</param>
+    /// <remarks>
+    /// Is sent by the client when: A client which supports a user interface for chat commands requests the list of commands which are available to the player. It's usually sent after the character entered the game world.
+    /// Causes reaction on server side: The server sends an AvailableChatCommand message for each available chat command.
+    /// </remarks>
+    [UnmanagedCallersOnly(EntryPoint = "SendChatCommandListRequest")]
+    public static void SendChatCommandListRequest(int handle)
+    {
+        if (!Connections.TryGetValue(handle, out var connection))
+        {
+            return;
+        }
+
+        try
+        {
+            connection.CreateAndSend(pipeWriter =>
+            {
+                var length = ChatCommandListRequestRef.Length;
+                var packet = new ChatCommandListRequestRef(pipeWriter.GetSpan(length)[..length]);
                 return length;
             });
         }

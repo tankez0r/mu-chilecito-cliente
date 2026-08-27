@@ -26,6 +26,7 @@ CNewUIStorageInventory::CNewUIStorageInventory()
     m_pNewInventoryCtrl = nullptr;
     m_Pos.x = m_Pos.y = 0;
     m_nBackupSourceInvenIndex = -1;
+    m_iActiveTab = 0;
 }
 
 CNewUIStorageInventory::~CNewUIStorageInventory()
@@ -62,6 +63,8 @@ bool CNewUIStorageInventory::Create(CNewUIManager* pNewUIMng, int x, int y)
 
     m_BtnExpand.ChangeButtonImgState(true, IMAGE_STORAGE_EXPAND_BTN, false);
     m_BtnExpand.ChangeToolTipText(&I18N::Game::OpeningAnExpandedVaultH, true);
+
+    InitTabButtons();
 
     m_bLock = false;
     SetItemAutoMove(false);
@@ -102,6 +105,47 @@ void CNewUIStorageInventory::SetPos(int x, int y)
     }
 
     m_BtnExpand.ChangeButtonInfo(x + xFirstButton + MAX_BTN * xOffsetPerButton, y + 391, 36, 29);
+
+    constexpr int tabWidth = 20;
+    constexpr int tabHeight = 18;
+    constexpr int tabSpacing = 24;
+    for (int i = 0; i < VAULT_TAB_COUNT; ++i)
+    {
+        m_aTabBtn[i].ChangeButtonInfo(x + 13 + (i * tabSpacing), y + 4, tabWidth, tabHeight);
+    }
+}
+
+void CNewUIStorageInventory::InitTabButtons()
+{
+    for (int i = 0; i < VAULT_TAB_COUNT; ++i)
+    {
+        m_aTabBtn[i].ChangeButtonImgState(true, IMAGE_STORAGE_EXPAND_BTN, false);
+        m_aTabBtn[i].ChangeText(std::to_wstring(i + 1));
+        m_aTabBtn[i].ChangeToolTipText(L"Vault tab " + std::to_wstring(i + 1), true);
+    }
+
+    m_iActiveTab = 0;
+}
+
+bool CNewUIStorageInventory::ProcessTabBtns()
+{
+    // Deliberately no "already on this tab" guard: OpenNpcWindowAsync fires again
+    // on every tab switch (VaultTabSelectAction reuses ShowVaultAsync verbatim),
+    // so there's no clean point to reset m_iActiveTab on a fresh dialog open
+    // without also stomping it on a switch. Letting a same-tab click re-request
+    // is harmless (the server just resends the same items) and avoids that whole
+    // class of stale-state bug.
+    for (int i = 0; i < VAULT_TAB_COUNT; ++i)
+    {
+        if (m_aTabBtn[i].UpdateMouseEvent())
+        {
+            m_iActiveTab = i;
+            SocketClient->ToGameServer()->SendVaultTabSelectRequest((BYTE)i);
+            return true;
+        }
+    }
+
+    return false;
 }
 
 bool CNewUIStorageInventory::UpdateMouseEvent()
@@ -175,6 +219,9 @@ bool CNewUIStorageInventory::Render()
 
     for (int i = BTN_INSERT_ZEN; i < MAX_BTN; ++i)
         m_abtn[i].Render();
+
+    for (int i = 0; i < VAULT_TAB_COUNT; ++i)
+        m_aTabBtn[i].Render();
 
     if (CharacterAttribute->IsVaultExtended > 0)
     {
@@ -483,6 +530,11 @@ void CNewUIStorageInventory::SendRequestItemToStorage(ITEM* pItemObj, int nInven
 
 bool CNewUIStorageInventory::ProcessBtns()
 {
+    if (ProcessTabBtns())
+    {
+        return true;
+    }
+
     if (CharacterAttribute->IsVaultExtended > 0 && m_BtnExpand.UpdateMouseEvent())
     {
         g_pNewUISystem->Toggle(INTERFACE_STORAGE_EXT);

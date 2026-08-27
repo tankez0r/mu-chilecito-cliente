@@ -514,13 +514,13 @@ public:
     /// <summary>
     /// Sends a CastleSiegeTaxChangeRequest to this connection.
     /// </summary>
-    /// <param name="taxType">0=Undefined, 1=ChaosMachine, 2 = Normal, 3 = EntranceFeeLandOfTrials</param>
-    /// <param name="taxRate">The tax rate.</param>
+    /// <param name="taxType">The tax type.</param>
+    /// <param name="taxValue">The percentage rate for shop and Chaos Machine taxes, or the entrance fee amount for the hunting zone.</param>
     /// <remarks>
     /// Is sent by the client when: The guild master wants to change the tax rate in the castle npc.
     /// Causes reaction on server side: The server changes the tax rates accordingly.
     /// </remarks>
-    void SendCastleSiegeTaxChangeRequest(BYTE taxType, uint32_t taxRate);
+    void SendCastleSiegeTaxChangeRequest(CastleSiegeTaxType taxType, uint32_t taxValue);
 
     /// <summary>
     /// Sends a CastleSiegeTaxMoneyWithdraw to this connection.
@@ -535,13 +535,13 @@ public:
     /// <summary>
     /// Sends a ToggleCastleGateRequest to this connection.
     /// </summary>
-    /// <param name="closeState">The close state.</param>
+    /// <param name="isOpen">The is open.</param>
     /// <param name="gateId">The gate id.</param>
     /// <remarks>
     /// Is sent by the client when: The guild member of the castle owner wants to toggle the gate switch.
     /// Causes reaction on server side: The castle gate is getting opened or closed.
     /// </remarks>
-    void SendToggleCastleGateRequest(BYTE closeState, uint16_t gateId);
+    void SendToggleCastleGateRequest(BYTE isOpen, uint16_t gateId);
 
     /// <summary>
     /// Sends a CastleGuildCommand to this connection.
@@ -549,12 +549,12 @@ public:
     /// <param name="team">Team Number 0 to 7.</param>
     /// <param name="positionX">The position x.</param>
     /// <param name="positionY">The position y.</param>
-    /// <param name="command">0 = Attack, 1 = Defend, 2 = Wait</param>
+    /// <param name="command">The command.</param>
     /// <remarks>
     /// Is sent by the client when: The guild master sent a command to his guild during the castle siege event.
     /// Causes reaction on server side: The command is shown on the mini map of the guild members.
     /// </remarks>
-    void SendCastleGuildCommand(BYTE team, BYTE positionX, BYTE positionY, BYTE command);
+    void SendCastleGuildCommand(BYTE team, BYTE positionX, BYTE positionY, CastleSiegeGuildCommandType command);
 
     /// <summary>
     /// Sends a CastleSiegeHuntingZoneEntranceSetting to this connection.
@@ -900,6 +900,16 @@ public:
     void SendVaultMoveMoneyRequest(VaultMoneyMoveDirection direction, uint32_t amount);
 
     /// <summary>
+    /// Sends a VaultTabSelectRequest to this connection.
+    /// </summary>
+    /// <param name="tabIndex">Zero-based vault tab index (0-3).</param>
+    /// <remarks>
+    /// Is sent by the client when: The player has the vault dialog open and clicks a different vault tab.
+    /// Causes reaction on server side: The server switches the player's active vault storage to the requested tab and re-sends its item list, money and state, the same way opening the vault dialog does.
+    /// </remarks>
+    void SendVaultTabSelectRequest(BYTE tabIndex);
+
+    /// <summary>
     /// Sends a LahapJewelMixRequest to this connection.
     /// </summary>
     /// <param name="operation">The operation.</param>
@@ -1156,7 +1166,7 @@ public:
     /// <param name="skillId">The skill id.</param>
     /// <param name="playerId">The player id.</param>
     /// <remarks>
-    /// Is sent by the client when: A player cancels a specific magic effect of a skill, usually 'Infinity Arrow' and 'Wizardy Enhance'.
+    /// Is sent by the client when: A player cancels a specific magic effect of a skill, usually 'Infinity Arrow' and 'Wizardry Enhance'.
     /// Causes reaction on server side: The effect is cancelled and an update is sent to the player and all surrounding players.
     /// </remarks>
     void SendMagicEffectCancelRequest(uint16_t skillId, uint16_t playerId);
@@ -2071,4 +2081,13 @@ public:
     /// Causes reaction on server side: The server will remove the player as spectator.
     /// </remarks>
     void SendDuelChannelQuitRequest();
+
+    /// <summary>
+    /// Sends a ChatCommandListRequest to this connection.
+    /// </summary>
+    /// <remarks>
+    /// Is sent by the client when: A client which supports a user interface for chat commands requests the list of commands which are available to the player. It's usually sent after the character entered the game world.
+    /// Causes reaction on server side: The server sends an AvailableChatCommand message for each available chat command.
+    /// </remarks>
+    void SendChatCommandListRequest();
 };

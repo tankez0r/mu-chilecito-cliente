@@ -146,7 +146,7 @@ inline SendCastleSiegeDefenseUpgradeRequest dotnet_SendCastleSiegeDefenseUpgrade
 typedef void(CORECLR_DELEGATE_CALLTYPE* SendCastleSiegeTaxInfoRequest)(int32_t);
 inline SendCastleSiegeTaxInfoRequest dotnet_SendCastleSiegeTaxInfoRequest = reinterpret_cast<SendCastleSiegeTaxInfoRequest>(symLoad(munique_client_library_handle, "SendCastleSiegeTaxInfoRequest"));
 
-typedef void(CORECLR_DELEGATE_CALLTYPE* SendCastleSiegeTaxChangeRequest)(int32_t, BYTE , uint32_t );
+typedef void(CORECLR_DELEGATE_CALLTYPE* SendCastleSiegeTaxChangeRequest)(int32_t, CastleSiegeTaxType , uint32_t );
 inline SendCastleSiegeTaxChangeRequest dotnet_SendCastleSiegeTaxChangeRequest = reinterpret_cast<SendCastleSiegeTaxChangeRequest>(symLoad(munique_client_library_handle, "SendCastleSiegeTaxChangeRequest"));
 
 typedef void(CORECLR_DELEGATE_CALLTYPE* SendCastleSiegeTaxMoneyWithdraw)(int32_t, uint32_t );
@@ -155,7 +155,7 @@ inline SendCastleSiegeTaxMoneyWithdraw dotnet_SendCastleSiegeTaxMoneyWithdraw = 
 typedef void(CORECLR_DELEGATE_CALLTYPE* SendToggleCastleGateRequest)(int32_t, BYTE , uint16_t );
 inline SendToggleCastleGateRequest dotnet_SendToggleCastleGateRequest = reinterpret_cast<SendToggleCastleGateRequest>(symLoad(munique_client_library_handle, "SendToggleCastleGateRequest"));
 
-typedef void(CORECLR_DELEGATE_CALLTYPE* SendCastleGuildCommand)(int32_t, BYTE , BYTE , BYTE , BYTE );
+typedef void(CORECLR_DELEGATE_CALLTYPE* SendCastleGuildCommand)(int32_t, BYTE , BYTE , BYTE , CastleSiegeGuildCommandType );
 inline SendCastleGuildCommand dotnet_SendCastleGuildCommand = reinterpret_cast<SendCastleGuildCommand>(symLoad(munique_client_library_handle, "SendCastleGuildCommand"));
 
 typedef void(CORECLR_DELEGATE_CALLTYPE* SendCastleSiegeHuntingZoneEntranceSetting)(int32_t, BYTE );
@@ -259,6 +259,9 @@ inline SendVaultClosed dotnet_SendVaultClosed = reinterpret_cast<SendVaultClosed
 
 typedef void(CORECLR_DELEGATE_CALLTYPE* SendVaultMoveMoneyRequest)(int32_t, VaultMoneyMoveDirection , uint32_t );
 inline SendVaultMoveMoneyRequest dotnet_SendVaultMoveMoneyRequest = reinterpret_cast<SendVaultMoveMoneyRequest>(symLoad(munique_client_library_handle, "SendVaultMoveMoneyRequest"));
+
+typedef void(CORECLR_DELEGATE_CALLTYPE* SendVaultTabSelectRequest)(int32_t, BYTE );
+inline SendVaultTabSelectRequest dotnet_SendVaultTabSelectRequest = reinterpret_cast<SendVaultTabSelectRequest>(symLoad(munique_client_library_handle, "SendVaultTabSelectRequest"));
 
 typedef void(CORECLR_DELEGATE_CALLTYPE* SendLahapJewelMixRequest)(int32_t, MixType , ItemType , StackSize , BYTE );
 inline SendLahapJewelMixRequest dotnet_SendLahapJewelMixRequest = reinterpret_cast<SendLahapJewelMixRequest>(symLoad(munique_client_library_handle, "SendLahapJewelMixRequest"));
@@ -592,3 +595,6 @@ inline SendDuelChannelJoinRequest dotnet_SendDuelChannelJoinRequest = reinterpre
 
 typedef void(CORECLR_DELEGATE_CALLTYPE* SendDuelChannelQuitRequest)(int32_t);
 inline SendDuelChannelQuitRequest dotnet_SendDuelChannelQuitRequest = reinterpret_cast<SendDuelChannelQuitRequest>(symLoad(munique_client_library_handle, "SendDuelChannelQuitRequest"));
+
+typedef void(CORECLR_DELEGATE_CALLTYPE* SendChatCommandListRequest)(int32_t);
+inline SendChatCommandListRequest dotnet_SendChatCommandListRequest = reinterpret_cast<SendChatCommandListRequest>(symLoad(munique_client_library_handle, "SendChatCommandListRequest"));
