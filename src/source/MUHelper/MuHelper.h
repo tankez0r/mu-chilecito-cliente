@@ -45,6 +45,8 @@ namespace MUHelper
 		int ActivatePet();
 		int Buff();
 		int BuffTarget(CHARACTER* pTargetChar, ActionSkillType iBuffSkill);
+		int AutoBuffLifeElf();
+		ActionSkillType GetLifeBuffSkill();
 		int RecoverHealth();
 		int Heal();
 		int HealSelf(ActionSkillType iHealingSkill);
@@ -56,10 +58,12 @@ namespace MUHelper
 		ActionSkillType SelectAttackSkill();
 		int SimulateAttack(ActionSkillType iSkill);
 		int SimulateSkill(ActionSkillType iSkill, bool bTargetRequired, int iTarget);
+		bool TryApproachTarget(int iTarget, float fRange);
 		int SimulateBasicAttack(int iTarget);
 		int SimulateComboAttack();
 		int GetNearestTarget();
 		int GetFarthestAttackingTarget();
+		bool HasTargetInRange(float fRange);
 		void CleanupTargets();
 		int ComputeDistanceByRange(int iRange);
 		int ComputeDistanceFromTarget(CHARACTER* pTarget);
@@ -72,6 +76,7 @@ namespace MUHelper
 		ActionSkillType GetDrainLifeSkill();
 		bool HasAssignedBuffSkill();
 		bool IsSelfPositionSkill(ActionSkillType iSkill);
+		bool IsAreaOfEffectSkill(ActionSkillType iSkill);
 
 	private:
 		ConfigData m_config;
@@ -82,6 +87,7 @@ namespace MUHelper
 		std::set<int> m_setTargetsAttacking;
 		std::set<int> m_setItems;
 		int m_iCurrentItem;
+		int m_iItemApproachAttempts;
 		int m_iCurrentTarget;
 		int m_iCurrentBuffIndex;
 		int m_iCurrentBuffPartyIndex;
@@ -93,6 +99,7 @@ namespace MUHelper
 		int m_iLoopCounter;
 		int m_iSecondsElapsed;
 		int m_iSecondsAway;
+		int m_iRegroupApproachAttempts;
 		bool m_bTimerActivatedBuffOngoing;
 		bool m_bPetActivated;
 		int m_iTotalCost;

@@ -12887,4 +12887,10 @@
   <data name="DefaultFont" xml:space="preserve">
     <value>Predeterminado</value>
   </data>
+  <data name="AoeAutoAttack" xml:space="preserve">
+    <value>Auto-ataque AoE (solo hechizos de área)</value>
+  </data>
+  <data name="AutoBuffLifeElf" xml:space="preserve">
+    <value>Auto-buff de vida (solo clase Elfo)</value>
+  </data>
 </root>

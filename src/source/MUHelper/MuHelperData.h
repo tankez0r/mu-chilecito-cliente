@@ -105,6 +105,23 @@ namespace MUHelper
 		bool bAutoAcceptFriend = false;
 		bool bAutoAcceptGuild = false;
 		bool bFallbackBasicAttack = true;
+
+		// Client-local settings (byte index 33, bits 4-5). See note above --
+		// same rules apply (safe to add, unsafe to move/remove).
+		//
+		// When surrounded, the helper's own path-to-target-tile check can
+		// fail even though the target is well within melee/cast range,
+		// because the routing search treats the crowd of monster bodies as
+		// obstacles. bAoeAutoAttack makes the helper skip that check for a
+		// short, verified whitelist of self-centered area skills (see
+		// CMuHelper::IsAreaOfEffectSkill) and cast them in place instead --
+		// it has no effect for any other skill.
+		bool bAoeAutoAttack = false;
+
+		// Self-casts the Elf/Muse Elf/High Elf "Swell Life" HP buff whenever
+		// it's missing, independent of the generic aiBuff slots above. Only
+		// takes effect for the Elf class line (see CMuHelper::AutoBuffLife).
+		bool bAutoBuffLifeElf = false;
 	} ConfigData;
 
 	class ConfigDataSerDe {
