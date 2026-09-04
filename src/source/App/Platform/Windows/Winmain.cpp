@@ -238,6 +238,113 @@ static void MaybeCaptureFrame()
 }
 #endif
 
+// Debug diagnostic (2026-08-28): user-reported "black screen flash when casting skills" is
+// too fast to catch with a manual screenshot. When g_BlackFrameDetectEnabled (RenderConfig.h,
+// toggled via the "$blackframe on"/"off" debug console command), samples a small patch at
+// screen center every frame; if its average brightness craters right after a normal-looking
+// frame, saves the full frame as a BMP plus a MuError.log line on its own, so the evidence
+// exists without anyone needing to react in time. Off by default -- a readback every frame
+// has a real cost, so this only runs while actively diagnosing.
+static void DetectAndCaptureBlackFrame()
+{
+    if (!g_BlackFrameDetectEnabled || !g_sdlWindow) return;
+
+    int w = 0, h = 0;
+    SDL_GetWindowSizeInPixels(g_sdlWindow, &w, &h);
+    if (w <= 0 || h <= 0) return;
+
+    constexpr int kSample = 32;
+    const int sx = (w - kSample) / 2;
+    const int sy = (h - kSample) / 2;
+
+    static std::vector<unsigned char> s_samplePixels;
+    s_samplePixels.resize(static_cast<size_t>(kSample) * kSample * 3);
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    if (!RHI::ReadColorFramebuffer(sx, sy, kSample, kSample, s_samplePixels.data()))
+        return;
+
+    long sum = 0;
+    for (unsigned char c : s_samplePixels) sum += c;
+    const double avgBrightness = static_cast<double>(sum) / s_samplePixels.size();
+
+    static double s_prevAvg = 255.0;
+    static long s_frameCounter = 0;
+    static long s_cooldownUntilFrame = 0;
+    ++s_frameCounter;
+
+    // Must be near-black AND a sharp drop from the previous frame -- distinguishes an
+    // anomalous flash from an already-dark scene (a dungeon corner, a legitimate fade).
+    constexpr double kBlackThreshold = 6.0;
+    constexpr double kDropThreshold = 25.0;
+    const bool suspiciousBlack = (avgBrightness < kBlackThreshold) &&
+                                  (s_prevAvg - avgBrightness > kDropThreshold) &&
+                                  (s_frameCounter >= s_cooldownUntilFrame);
+
+    if (suspiciousBlack)
+    {
+        s_cooldownUntilFrame = s_frameCounter + 120; // don't re-trigger on the same flash
+
+        std::vector<unsigned char> fullFrame(static_cast<size_t>(w) * h * 3);
+        if (RHI::ReadColorFramebuffer(0, 0, w, h, fullFrame.data()))
+        {
+            wchar_t exeDir[MAX_PATH];
+            GetModuleFileNameW(nullptr, exeDir, MAX_PATH);
+            if (wchar_t* lastSlash = wcsrchr(exeDir, L'\\'))
+                *(lastSlash + 1) = L'\0';
+
+            wchar_t captureDir[MAX_PATH];
+            swprintf_s(captureDir, L"%sBlackFrameCaptures", exeDir);
+            CreateDirectoryW(captureDir, nullptr);
+
+            wchar_t bmpPath[MAX_PATH];
+            swprintf_s(bmpPath, L"%s\\blackframe_%04ld.bmp", captureDir, s_frameCounter);
+
+            // Minimal 24bpp BMP; negative height = top-down, matching RHI's row order (no flip needed).
+            if (FILE* fp = _wfopen(bmpPath, L"wb"))
+            {
+                const uint32_t rowSize = ((static_cast<uint32_t>(w) * 3 + 3) / 4) * 4; // 4-byte row alignment
+                const uint32_t pixelDataSize = rowSize * static_cast<uint32_t>(h);
+                const uint32_t fileSize = 54 + pixelDataSize;
+
+                unsigned char header[54] = {0};
+                header[0] = 'B'; header[1] = 'M';
+                memcpy(&header[2], &fileSize, 4);
+                const uint32_t pixelDataOffset = 54;
+                memcpy(&header[10], &pixelDataOffset, 4);
+                const uint32_t dibHeaderSize = 40;
+                memcpy(&header[14], &dibHeaderSize, 4);
+                memcpy(&header[18], &w, 4);
+                const int32_t negH = -h;
+                memcpy(&header[22], &negH, 4);
+                const uint16_t planes = 1, bpp = 24;
+                memcpy(&header[26], &planes, 2);
+                memcpy(&header[28], &bpp, 2);
+                memcpy(&header[34], &pixelDataSize, 4);
+                std::fwrite(header, 1, sizeof(header), fp);
+
+                std::vector<unsigned char> row(rowSize, 0);
+                for (int y = 0; y < h; ++y)
+                {
+                    const unsigned char* src = fullFrame.data() + static_cast<size_t>(y) * w * 3;
+                    for (int x = 0; x < w; ++x)
+                    {
+                        row[x * 3 + 0] = src[x * 3 + 2]; // RGB -> BGR for BMP
+                        row[x * 3 + 1] = src[x * 3 + 1];
+                        row[x * 3 + 2] = src[x * 3 + 0];
+                    }
+                    std::fwrite(row.data(), 1, rowSize, fp);
+                }
+                std::fclose(fp);
+
+                g_ErrorReport.Write(L"[BlackFrameDetect] frame %ld: center-patch avg brightness %.1f (was %.1f) - saved %ls",
+                    s_frameCounter, avgBrightness, s_prevAvg, bmpPath);
+            }
+        }
+    }
+
+    s_prevAvg = avgBrightness;
+}
+
 // Present the current frame. SDL owns the window/GL context, so GL swapping goes through
 // SDL_GL_SwapWindow instead of the Win32 ::SwapBuffers (issue #442). This is the one place all
 // of this file's/LoadingScene.cpp's/SceneManager.cpp's/UIMng.cpp's present call sites funnel
@@ -1924,6 +2031,15 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int nC
     else
     {
         SetTargetFps(GetFPSLimit());
+    }
+
+    // config.ini [Render] FPSLimit override (e.g. 120) - takes priority over whatever the
+    // VSync/monitor-refresh dance above landed on. Same effect as the "$vsync off" + "$fps <n>"
+    // debug-console commands, just applied at boot so it doesn't need to be retyped every session.
+    if (g_FPSLimitOverride > 0)
+    {
+        DisableVSync();
+        SetTargetFps(g_FPSLimitOverride);
     }
 
     // Make the bundled ./fonts faces resolvable by GDI before the first CreateFont,

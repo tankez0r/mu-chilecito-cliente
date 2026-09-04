@@ -7299,6 +7299,10 @@ void ReceivePartyList(const BYTE* ReceiveBuffer)
 void ReceivePartyInfo(const BYTE* ReceiveBuffer)
 {
     auto Data = (LPPRECEIVE_PARTY_INFOS)ReceiveBuffer;
+    if (Data->Count > MAX_PARTYS)
+    {
+        Data->Count = MAX_PARTYS;
+    }
     int Offset = sizeof(PRECEIVE_PARTY_INFOS);
     for (int i = 0; i < Data->Count; i++)
     {

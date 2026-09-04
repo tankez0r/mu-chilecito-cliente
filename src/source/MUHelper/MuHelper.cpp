@@ -1348,7 +1348,8 @@ namespace MUHelper
         return AT_SKILL_UNDEFINED;
     }
 
-    // Matches AttackWizard() behavior in ZzzInterface.cpp for these skill IDs.
+    // Originally built by matching AttackWizard()'s skill IDs (ClassAttack.cpp),
+    // so it only ever covered wizard-class skills.
     bool CMuHelper::IsSelfPositionSkill(ActionSkillType iSkill)
     {
         return (
@@ -1370,7 +1371,13 @@ namespace MUHelper
             iSkill == AT_SKILL_EVIL_SPIRIT ||
             iSkill == AT_SKILL_EVIL_SPIRIT_STR ||
             iSkill == AT_SKILL_EVIL_SPIRIT_STR_MG ||
-            iSkill == AT_SKILL_STORM
+            iSkill == AT_SKILL_STORM ||
+            // Multi-Shot (Elf bow/crossbow skill, AttackElf() in ClassAttack.cpp)
+            // was never considered because the original whitelist only looked at
+            // AttackWizard() - but it fires the same way: SendRequestMagicContinue
+            // with c->PositionX/PositionY, just facing the target's angle first.
+            // Same self-position bucket, same "freezes when surrounded" bug.
+            iSkill == AT_SKILL_MULTI_SHOT
         );
     }
 

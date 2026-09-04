@@ -22,6 +22,12 @@ float g_CurrentColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 // See RenderConfig.h -- matches EnableVSync()'s unconditional call at boot.
 bool g_VSyncEnabled = true;
 
+// See RenderConfig.h -- 0 = no override.
+int g_FPSLimitOverride = 0;
+
+// See RenderConfig.h -- off by default, toggled via "$blackframe on"/"off".
+bool g_BlackFrameDetectEnabled = false;
+
 void InitRenderConfig()
 {
     wchar_t configPath[MAX_PATH];
@@ -54,6 +60,8 @@ void InitRenderConfig()
         g_MaxGLVersionMajor = maxMajor;
         g_MaxGLVersionMinor = maxMinor;
     }
+
+    g_FPSLimitOverride = GetPrivateProfileIntW(CfgSections::CfgSectionRender, CfgKeys::CfgKeyFPSLimit, CfgDefaults::CfgDefaultFPSLimit, configPath);
 }
 
 void BuildPerspectiveProjection(float f, float aspect, float zNear, float zFar, float out[16])

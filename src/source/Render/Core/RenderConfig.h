@@ -27,6 +27,22 @@ extern float g_AlphaFuncRef;
 // unconditional call at boot (Winmain.cpp).
 extern bool g_VSyncEnabled;
 
+// config.ini [Render] FPSLimit: 0 = no override (default VSync/monitor-refresh pacing,
+// see Winmain.cpp's boot-time InitVSync/EnableVSync sequence). A positive value means the
+// user opted into an explicit target framerate (e.g. 120 on a 60Hz display via DSR/borderless,
+// or just to run uncapped-from-the-monitor) - Winmain.cpp disables VSync and calls
+// SetTargetFps(g_FPSLimitOverride) after that sequence when this is set.
+extern int g_FPSLimitOverride;
+
+// Debug diagnostic (2026-08-28, chasing a user-reported "black screen flash when casting
+// skills" too fast to screenshot by hand): when true, PlatformSwapBuffers() (Winmain.cpp)
+// samples a small center patch of every presented frame and, if its average brightness
+// craters right after a normal frame, saves a full-frame BMP + a MuError.log line on its
+// own -- no human needs to catch the flash in time. Off by default (a readback every frame
+// has a real cost); toggle at runtime with the "$blackframe on"/"$blackframe off" debug
+// console commands (muConsoleDebug.cpp) rather than shipping it always-on.
+extern bool g_BlackFrameDetectEnabled;
+
 // DXP-08a Category 1: CPU-tracked mirror of the FFP "current color" any glColor* call used
 // to set (RGBA, 0-1 range). Under Core Profile glColor* no-ops and glGetFloatv(GL_CURRENT_
 // COLOR, ...) is itself an illegal call, so callers that used to rely on reading back the

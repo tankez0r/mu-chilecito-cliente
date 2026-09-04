@@ -48,6 +48,11 @@ namespace CfgKeys
     // (default) tries the highest of {4.5, 4.3, 3.3} the driver will grant. Rollback path for a
     // driver that mishandles the descending attempt loop.
     inline constexpr wchar_t CfgKeyMaxGLVersion[] = L"MaxGLVersion";
+    // Explicit frame-rate cap, e.g. "120". 0 (default) leaves the existing VSync/monitor-refresh
+    // behavior alone (Winmain.cpp's InitVSync/EnableVSync dance). A positive value disables VSync
+    // and targets that FPS instead, uncoupling the game from the display's refresh rate -- same
+    // effect as the "$vsync off" + "$fps <n>" debug-console commands, just persisted.
+    inline constexpr wchar_t CfgKeyFPSLimit[] = L"FPSLimit";
 }
 
 namespace CfgDefaults
@@ -85,4 +90,7 @@ namespace CfgDefaults
 
     // GLP-08: empty = no cap, try the highest core context available.
     inline constexpr wchar_t CfgDefaultMaxGLVersion[] = L"";
+
+    // 0 = no override, keep VSync/monitor-refresh pacing.
+    inline constexpr int CfgDefaultFPSLimit = 0;
 }
