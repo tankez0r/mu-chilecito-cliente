@@ -1878,6 +1878,7 @@ bool CNewUISystem::IsImpossibleSendMoveInterface()
     if (IsVisible(INTERFACE_MIXINVENTORY)
         || IsVisible(INTERFACE_KANTURU2ND_ENTERNPC)
         || IsVisible(SEASON3B::INTERFACE_LUCKYITEMWND)
+        || IsVisible(INTERFACE_STORAGE)
         )
     {
         return true;

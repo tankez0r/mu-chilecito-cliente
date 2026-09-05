@@ -117,6 +117,7 @@ namespace SEASON3B
 
         void SetItemAutoMove(bool bItemAutoMove, int nSourceInvenIndex = -1);
         void SendRequestItemToStorage(ITEM* pItemObj, int nInvenIndex, int nStorageIndex);
+        void DeleteAllItems();
     private:
         void LoadImages();
         void UnloadImages();
@@ -125,7 +126,6 @@ namespace SEASON3B
         void RenderText();
 
         void ChangeLockBtnImage();
-        void DeleteAllItems();
 
         void LockStorage(bool bLock);
         void SetCorrectPassword(bool bCorrectPassword)

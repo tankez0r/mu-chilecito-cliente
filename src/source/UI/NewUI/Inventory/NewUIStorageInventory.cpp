@@ -106,12 +106,18 @@ void CNewUIStorageInventory::SetPos(int x, int y)
 
     m_BtnExpand.ChangeButtonInfo(x + xFirstButton + MAX_BTN * xOffsetPerButton, y + 391, 36, 29);
 
-    constexpr int tabWidth = 20;
-    constexpr int tabHeight = 18;
-    constexpr int tabSpacing = 24;
+    // Stacked vertically along the outer left edge of the window, like side tabs,
+    // instead of a horizontal row across the top (per user's reference screenshot).
+    // Size matches IMAGE_STORAGE_EXPAND_BTN's native 36x29 (same as m_abtn/m_BtnExpand
+    // above) - RenderImage samples the texture at the given size instead of scaling it,
+    // so a smaller box just showed a cropped corner of the button graphic.
+    constexpr int tabWidth = 36;
+    constexpr int tabHeight = 29;
+    constexpr int tabSpacing = 33;
+    constexpr int tabLeftGap = 2;
     for (int i = 0; i < VAULT_TAB_COUNT; ++i)
     {
-        m_aTabBtn[i].ChangeButtonInfo(x + 13 + (i * tabSpacing), y + 4, tabWidth, tabHeight);
+        m_aTabBtn[i].ChangeButtonInfo(x - tabWidth - tabLeftGap, y + 60 + (i * tabSpacing), tabWidth, tabHeight);
     }
 }
 

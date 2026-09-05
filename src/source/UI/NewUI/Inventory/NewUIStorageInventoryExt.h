@@ -71,6 +71,7 @@ namespace SEASON3B
         int GetPointedItemIndex() const;
 
         void SetItemAutoMove(bool bItemAutoMove, int nSourceInvenIndex = -1);
+        void DeleteAllItems() const;
 
     private:
         void LoadImages() const;
@@ -78,8 +79,6 @@ namespace SEASON3B
 
         void RenderBackImage() const;
         void RenderText() const;
-
-        void DeleteAllItems() const;
 
         void ProcessInventoryCtrl();
         bool ProcessBtns() const;

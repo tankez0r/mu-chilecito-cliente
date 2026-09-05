@@ -1712,6 +1712,19 @@ void ReceiveTradeInventoryExtended(std::span<const BYTE> ReceiveBuffer)
         {
             g_pNPCShop->DeleteAllItems();
         }
+        else if (g_pNewUISystem->IsVisible(SEASON3B::INTERFACE_STORAGE))
+        {
+            // Vault (re)open and every tab switch (VaultTabSelectAction) resend the full item
+            // list through this same path, but unlike the NPC shop branch above, this one never
+            // cleared the storage controls first - stale items from whatever was previously
+            // displayed stayed in place and blocked AddItem() below from placing the new tab's
+            // items in the same slots, since AddItem() (see NewUIInventoryCtrl) refuses to place
+            // an item over one already there. Net effect: items you'd just put in the vault
+            // looked like they vanished on reopen/tab switch, and couldn't be withdrawn, because
+            // the client's own item map still didn't know about them.
+            g_pStorageInventory->DeleteAllItems();
+            g_pStorageInventoryExt->DeleteAllItems();
+        }
     }
 
     for (int i = 0; i < Data->Value; i++)
