@@ -12897,4 +12897,10 @@
   <data name="AutoBuffLifeElf" xml:space="preserve">
     <value>Auto-buff de vida (solo clase Elfo)</value>
   </data>
+  <data name="Must complete second class change to use this" xml:space="preserve">
+    <value>Tenés que completar tu cambio a 2da clase para usar esto.</value>
+  </data>
+  <data name="Must be over level 220 to use this" xml:space="preserve">
+    <value>Tenés que ser mayor a nivel 220 para usar esto.</value>
+  </data>
 </root>

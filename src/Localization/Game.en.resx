@@ -12941,4 +12941,10 @@
   <data name="DefaultFont" xml:space="preserve">
     <value>Default</value>
   </data>
+  <data name="Must complete second class change to use this" xml:space="preserve">
+    <value>You must complete your 2nd class change to use this.</value>
+  </data>
+  <data name="Must be over level 220 to use this" xml:space="preserve">
+    <value>You must be over level 220 to use this.</value>
+  </data>
 </root>

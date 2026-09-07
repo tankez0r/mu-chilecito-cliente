@@ -833,6 +833,7 @@ bool CNewUIInventoryActionController::TryConsumeItem(CNewUIInventoryCtrl* target
     {
         bool bReadBookGem = true;
 
+        bool bMissingSecondClassChange = false;
         if (pItem->Type == ITEM_SCROLL_OF_NOVA
             || pItem->Type == ITEM_SCROLL_OF_WIZARDRY_ENHANCE
             || pItem->Type == ITEM_CRYSTAL_OF_MULTI_SHOT
@@ -842,14 +843,17 @@ bool CNewUIInventoryActionController::TryConsumeItem(CNewUIInventoryCtrl* target
             if (g_csQuest.getQuestState2(QUEST_CHANGE_UP_3) != QUEST_END)
             {
                 bReadBookGem = false;
+                bMissingSecondClassChange = true;
             }
         }
 
+        bool bBelowChaoticDiseierLevel = false;
         if (pItem->Type == ITEM_SCROLL_OF_CHAOTIC_DISEIER)
         {
             if (CharacterAttribute->Level < 220)
             {
                 bReadBookGem = false;
+                bBelowChaoticDiseierLevel = true;
             }
         }
 
@@ -868,7 +872,18 @@ bool CNewUIInventoryActionController::TryConsumeItem(CNewUIInventoryCtrl* target
             return true;
         }
 
-        return false;
+        // Previously fell through to TryEquipItem/TryDropItem here, silently dropping the
+        // book/scroll on the ground with no explanation - tell the player why instead.
+        if (bMissingSecondClassChange)
+        {
+            CreateOkMessageBox(I18N::Game::MustCompleteSecondClassChangeToUseThis);
+        }
+        else if (bBelowChaoticDiseierLevel)
+        {
+            CreateOkMessageBox(I18N::Game::MustBeOverLevel220ToUseThis);
+        }
+
+        return true;
     }
 
     if (pItem->Type == ITEM_FRUITS)
