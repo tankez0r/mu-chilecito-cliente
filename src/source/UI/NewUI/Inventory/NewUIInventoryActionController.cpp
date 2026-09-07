@@ -833,19 +833,15 @@ bool CNewUIInventoryActionController::TryConsumeItem(CNewUIInventoryCtrl* target
     {
         bool bReadBookGem = true;
 
-        bool bMissingSecondClassChange = false;
-        if (pItem->Type == ITEM_SCROLL_OF_NOVA
-            || pItem->Type == ITEM_SCROLL_OF_WIZARDRY_ENHANCE
-            || pItem->Type == ITEM_CRYSTAL_OF_MULTI_SHOT
-            || pItem->Type == ITEM_CRYSTAL_OF_RECOVERY
-            || pItem->Type == ITEM_CRYSTAL_OF_DESTRUCTION)
-        {
-            if (g_csQuest.getQuestState2(QUEST_CHANGE_UP_3) != QUEST_END)
-            {
-                bReadBookGem = false;
-                bMissingSecondClassChange = true;
-            }
-        }
+        // Scroll of Nova/Wizardry Enhance and the 3 Crystal items used to also require
+        // QUEST_CHANGE_UP_3 (the 2nd class change quest, despite the "3" in its name - the
+        // separate QUEST_3RD_CHANGE_UP_1/2/3 constants are the real 3rd-class-change quest,
+        // untouched here) - removed because this server never sends the ReceiveQuestHistory
+        // packet that populates quest state at all, so that check could never pass for ANY
+        // character regardless of actual class/level/stats (confirmed 2026-09-07: a real
+        // Soul Master meeting every other requirement was still blocked). These are 2nd-class
+        // skills by design (the item tooltip itself says "Can be equipped by Soul Master") -
+        // the level/energy/class requirements below are the real, working gate.
 
         bool bBelowChaoticDiseierLevel = false;
         if (pItem->Type == ITEM_SCROLL_OF_CHAOTIC_DISEIER)
@@ -874,11 +870,7 @@ bool CNewUIInventoryActionController::TryConsumeItem(CNewUIInventoryCtrl* target
 
         // Previously fell through to TryEquipItem/TryDropItem here, silently dropping the
         // book/scroll on the ground with no explanation - tell the player why instead.
-        if (bMissingSecondClassChange)
-        {
-            CreateOkMessageBox(I18N::Game::MustCompleteSecondClassChangeToUseThis);
-        }
-        else if (bBelowChaoticDiseierLevel)
+        if (bBelowChaoticDiseierLevel)
         {
             CreateOkMessageBox(I18N::Game::MustBeOverLevel220ToUseThis);
         }
