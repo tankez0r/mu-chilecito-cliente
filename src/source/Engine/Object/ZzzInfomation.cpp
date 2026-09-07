@@ -2268,8 +2268,17 @@ bool IsRequireEquipItem(ITEM* pItem)
         return false;
     if (pItem->RequireCharisma > wCharisma)
         return false;
-    if (pItem->RequireLevel > wLevel)
-        return false;
+    // Deliberately NOT gating on RequireLevel here anymore (2026-09-06, user request): this
+    // function is queried continuously (every stat recalculation, e.g. PlusSpecial() for wings/
+    // armor/weapons and the per-slot loop in CSItemOption::CalcItemOption), using the character's
+    // CURRENT level - not the level at the moment the item was equipped. An item you already meet
+    // every other requirement for and are already wearing shouldn't go dark on you just because a
+    // reset temporarily dropped your level; the level gate still applies once, server-side and
+    // client-side, at the moment you try to *equip* something (see ZzzInventory.cpp's separate
+    // equip-time check and the server's MoveItemAction/CompliesRequirements), so a too-high-level
+    // item can't be equipped in the first place - this only stops an already-equipped item's
+    // bonuses from being suppressed afterward.
+    (void)wLevel;
 
     if (pItem->Type == ITEM_DARK_RAVEN_ITEM)
     {

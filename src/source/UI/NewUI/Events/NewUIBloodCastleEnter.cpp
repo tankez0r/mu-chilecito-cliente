@@ -238,10 +238,20 @@ bool CNewUIEnterBloodCastle::BtnProcess()
         return true;
     }
 
-    if ((m_iNumActiveBtn != -1) && (m_BtnEnter[m_iNumActiveBtn].UpdateMouseEvent() == true))
+    // Every level is selectable - the server is the one that decides whether this character
+    // qualifies (by resets, not character level here), and answers with a clear message if not
+    // (see MUnique.OpenMU EnterMiniGameAction.TryEnterMiniGameAsync). Previously only the single
+    // button matching the character's level bracket (m_iNumActiveBtn, from the legacy
+    // level-range table above) was ever unlocked/clickable, so a character outside that one
+    // bracket saw every other level as permanently locked regardless of resets.
+    for (int i = 0; i < MAX_ENTER_GRADE; ++i)
     {
-        SocketClient->ToGameServer()->SendBloodCastleEnterRequest(m_iNumActiveBtn + 1, 0xFF);
-        g_pNewUISystem->Hide(SEASON3B::INTERFACE_BLOODCASTLE);
+        if (m_BtnEnter[i].UpdateMouseEvent() == true)
+        {
+            SocketClient->ToGameServer()->SendBloodCastleEnterRequest(i + 1, 0xFF);
+            g_pNewUISystem->Hide(SEASON3B::INTERFACE_BLOODCASTLE);
+            break;
+        }
     }
 
     return false;
@@ -256,10 +266,14 @@ void CNewUIEnterBloodCastle::OpenningProcess()
 {
     SocketClient->ToGameServer()->SendCloseNpcRequest();
 
+    // Every level starts unlocked - resets (checked server-side), not character level, decide
+    // whether entry actually succeeds. m_iNumActiveBtn/CheckLimitLV's level-bracket table is kept
+    // below only to drive the (currently still level-range-worded) button labels; it no longer
+    // gates which buttons can be clicked.
     for (int i = 0; i < MAX_ENTER_GRADE; i++)
     {
-        m_BtnEnter[i].ChangeTextColor(m_dwBtnTextColor[ENTERBTN_DISABLE]);
-        m_BtnEnter[i].Lock();
+        m_BtnEnter[i].ChangeTextColor(m_dwBtnTextColor[ENTERBTN_ENABLE]);
+        m_BtnEnter[i].UnLock();
     }
 
     int iLimitLVIndex = 0;
@@ -270,9 +284,6 @@ void CNewUIEnterBloodCastle::OpenningProcess()
     }
 
     m_iNumActiveBtn = CheckLimitLV(iLimitLVIndex);
-
-    m_BtnEnter[m_iNumActiveBtn].UnLock();
-    m_BtnEnter[m_iNumActiveBtn].ChangeTextColor(m_dwBtnTextColor[ENTERBTN_ENABLE]);
 
     wchar_t sztext[255] = { 0, };
 

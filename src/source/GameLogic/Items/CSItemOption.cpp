@@ -837,7 +837,6 @@ void CSItemOption::CheckItemSetOptions()
     const auto AllEnergy = static_cast<std::uint16_t>(CharacterAttribute->Energy + CharacterAttribute->AddEnergy);
     auto AllVitality = static_cast<std::uint16_t>(CharacterAttribute->Vitality + CharacterAttribute->AddVitality);
     const auto AllCharisma = static_cast<std::uint16_t>(CharacterAttribute->Charisma + CharacterAttribute->AddCharisma);
-    const auto AllLevel = static_cast<std::uint16_t>(CharacterAttribute->Level);
 
     // And now we're doing all that again, just for checking the required stats?!
     // TODO: How can this be improved?
@@ -854,7 +853,12 @@ void CSItemOption::CheckItemSetOptions()
 
         ITEM* ip = &CharacterMachine->Equipment[i];
 
-        if (ip->RequireDexterity > AllDexterity || ip->RequireEnergy > AllEnergy || ip->RequireStrength > AllStrength || ip->RequireLevel > AllLevel || ip->RequireCharisma > AllCharisma || ip->Durability <= 0 || (IsRequireEquipItem(ip) == false)) {
+        // RequireLevel deliberately not checked here anymore (2026-09-06, user request, see the
+        // matching change in IsRequireEquipItem/ZzzInfomation.cpp) - an already-equipped item
+        // shouldn't lose its stat contribution just because the character's current level (e.g.
+        // right after a reset) dips below what the item asks for. The other requirements (class,
+        // stats, durability) still gate it exactly as before.
+        if (ip->RequireDexterity > AllDexterity || ip->RequireEnergy > AllEnergy || ip->RequireStrength > AllStrength || ip->RequireCharisma > AllCharisma || ip->Durability <= 0 || (IsRequireEquipItem(ip) == false)) {
             continue;
         }
 
