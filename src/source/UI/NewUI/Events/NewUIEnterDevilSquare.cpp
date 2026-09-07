@@ -194,10 +194,20 @@ bool CNewUIEnterDevilSquare::BtnProcess()
         return true;
     }
 
-    if ((m_iNumActiveBtn != -1) && (m_BtnEnter[m_iNumActiveBtn].UpdateMouseEvent() == true))
+    // Every level is selectable - the server is the one that decides whether this character
+    // qualifies (by resets, not character level here), and answers with a clear message if not.
+    // Previously only the single button matching the character's level bracket (m_iNumActiveBtn,
+    // from the legacy level-range table above) was ever unlocked/clickable, so a character outside
+    // that one bracket saw every other level as permanently locked regardless of resets - same bug
+    // Blood Castle's entry window had (see NewUIBloodCastleEnter.cpp).
+    for (int i = 0; i < MAX_ENTER_GRADE; ++i)
     {
-        SocketClient->ToGameServer()->SendDevilSquareEnterRequest(m_iNumActiveBtn, 0xFF);
-        g_pNewUISystem->Hide(SEASON3B::INTERFACE_DEVILSQUARE);
+        if (m_BtnEnter[i].UpdateMouseEvent() == true)
+        {
+            SocketClient->ToGameServer()->SendDevilSquareEnterRequest(i, 0xFF);
+            g_pNewUISystem->Hide(SEASON3B::INTERFACE_DEVILSQUARE);
+            break;
+        }
     }
 
     return false;
@@ -247,10 +257,14 @@ void CNewUIEnterDevilSquare::OpenningProcess()
 {
     SocketClient->ToGameServer()->SendCloseNpcRequest();
 
+    // Every level starts unlocked - resets (checked server-side), not character level, decide
+    // whether entry actually succeeds. m_iNumActiveBtn/CheckLimitLV's level-bracket table is no
+    // longer used to gate buttons (kept only because CheckLimitLV/m_iDevilSquareLimitLevel remain
+    // referenced elsewhere); labels below are tier-based instead of level-range-based now too.
     for (int i = 0; i < MAX_ENTER_GRADE; i++)
     {
-        m_BtnEnter[i].ChangeTextColor(m_dwBtnTextColor[ENTERBTN_DISABLE]);
-        m_BtnEnter[i].Lock();
+        m_BtnEnter[i].ChangeTextColor(m_dwBtnTextColor[ENTERBTN_ENABLE]);
+        m_BtnEnter[i].UnLock();
     }
 
     int iLimitLVIndex = 0;
@@ -262,23 +276,20 @@ void CNewUIEnterDevilSquare::OpenningProcess()
 
     m_iNumActiveBtn = CheckLimitLV(iLimitLVIndex);
 
-    m_BtnEnter[m_iNumActiveBtn].UnLock();
-    m_BtnEnter[m_iNumActiveBtn].ChangeTextColor(m_dwBtnTextColor[ENTERBTN_ENABLE]);
-
-    wchar_t sztext[255] = { 0, };
-
-    for (int i = 0; i < MAX_ENTER_GRADE - 1; i++)
+    // Same tier scale as Blood Castle's entry window (NewUIBloodCastleEnter.cpp) - Devil Square
+    // only has 7 levels (no equivalent of Blood Castle's extra 8th/hardest one), so it tops out at
+    // Tier 4 instead of Tier 4.5.
+    const wchar_t* const tierLabels[MAX_ENTER_GRADE] =
     {
-        mu_swprintf(sztext, I18N::Game::TheDSquareDDLevel, i + 1
-            , m_iDevilSquareLimitLevel[(iLimitLVIndex * (MAX_ENTER_GRADE)) + i][0]
-            , m_iDevilSquareLimitLevel[(iLimitLVIndex * (MAX_ENTER_GRADE)) + i][1]);
-        m_BtnEnter[i].SetFont(g_hFontBold);
-        m_BtnEnter[i].ChangeText(sztext);
-    }
+        I18N::Game::TierLabel1, I18N::Game::TierLabel1Point5, I18N::Game::TierLabel2, I18N::Game::TierLabel2Point5,
+        I18N::Game::TierLabel3, I18N::Game::TierLabel3Point5, I18N::Game::TierLabel4,
+    };
 
-    mu_swprintf(sztext, I18N::Game::SquareNoDMasterLevel, 7);
-    m_BtnEnter[MAX_ENTER_GRADE - 1].SetFont(g_hFontBold);
-    m_BtnEnter[MAX_ENTER_GRADE - 1].ChangeText(sztext);
+    for (int i = 0; i < MAX_ENTER_GRADE; i++)
+    {
+        m_BtnEnter[i].SetFont(g_hFontBold);
+        m_BtnEnter[i].ChangeText(tierLabels[i]);
+    }
 }
 
 void CNewUIEnterDevilSquare::ClosingProcess()

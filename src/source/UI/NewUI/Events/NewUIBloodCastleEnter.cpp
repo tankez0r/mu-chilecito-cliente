@@ -285,21 +285,23 @@ void CNewUIEnterBloodCastle::OpenningProcess()
 
     m_iNumActiveBtn = CheckLimitLV(iLimitLVIndex);
 
-    wchar_t sztext[255] = { 0, };
-
-    for (int i = 0; i < MAX_ENTER_GRADE - 1; i++)
+    // Labels used to show the legacy character-level bracket (e.g. "Castle 1 (level 15-80)"),
+    // which stopped being what actually gates entry once every button became clickable - resets,
+    // not character level, decide eligibility server-side (see the note in BtnProcess above).
+    // Showing a level range that no longer applies was misleading, so these are named by relative
+    // difficulty tier instead - Blood Castle 8 is the hardest/most exclusive, so it gets the extra
+    // half-step on top of Devil Square's tier scale (which tops out at 7 without an equivalent).
+    const wchar_t* const tierLabels[MAX_ENTER_GRADE] =
     {
-        mu_swprintf(sztext, I18N::Game::CastleDLevelDD, i + 1
-            , m_iBloodCastleLimitLevel[(iLimitLVIndex * MAX_ENTER_GRADE) + i][0]
-            , m_iBloodCastleLimitLevel[(iLimitLVIndex * MAX_ENTER_GRADE) + i][1]);
+        I18N::Game::TierLabel1, I18N::Game::TierLabel1Point5, I18N::Game::TierLabel2, I18N::Game::TierLabel2Point5,
+        I18N::Game::TierLabel3, I18N::Game::TierLabel3Point5, I18N::Game::TierLabel4, I18N::Game::TierLabel4Point5,
+    };
+
+    for (int i = 0; i < MAX_ENTER_GRADE; i++)
+    {
         m_BtnEnter[i].SetFont(g_hFontBold);
-        m_BtnEnter[i].ChangeText(sztext);
+        m_BtnEnter[i].ChangeText(tierLabels[i]);
     }
-
-    mu_swprintf(sztext, I18N::Game::CastleNoDMasterLevel, 8);
-
-    m_BtnEnter[MAX_ENTER_GRADE - 1].SetFont(g_hFontBold);
-    m_BtnEnter[MAX_ENTER_GRADE - 1].ChangeText(sztext);
 }
 
 void CNewUIEnterBloodCastle::ClosingProcess()

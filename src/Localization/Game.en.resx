@@ -3181,6 +3181,30 @@
     <value>Castle %d (over level %d)</value>
     <comment>legacy_id=848</comment>
   </data>
+  <data name="TierLabel1" xml:space="preserve">
+    <value>Tier 1</value>
+  </data>
+  <data name="TierLabel1Point5" xml:space="preserve">
+    <value>Tier 1.5</value>
+  </data>
+  <data name="TierLabel2" xml:space="preserve">
+    <value>Tier 2</value>
+  </data>
+  <data name="TierLabel2Point5" xml:space="preserve">
+    <value>Tier 2.5</value>
+  </data>
+  <data name="TierLabel3" xml:space="preserve">
+    <value>Tier 3</value>
+  </data>
+  <data name="TierLabel3Point5" xml:space="preserve">
+    <value>Tier 3.5</value>
+  </data>
+  <data name="TierLabel4" xml:space="preserve">
+    <value>Tier 4</value>
+  </data>
+  <data name="TierLabel4Point5" xml:space="preserve">
+    <value>Tier 4.5</value>
+  </data>
   <data name="Archangel" xml:space="preserve">
     <value>Archangel</value>
     <comment>legacy_id=849</comment>
