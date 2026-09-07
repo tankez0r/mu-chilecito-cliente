@@ -1737,6 +1737,25 @@ const wchar_t* CMapManager::GetMapName(int iMap)
     }
     if (InBloodCastle(iMap) == true)
     {
+        // Every Blood Castle instance (levels 1-8) used to return the exact same plain
+        // "Blood Castle" string here, with no way to tell which level you're actually in from the
+        // map name shown on screen - the level only showed up in the entry window's tier label
+        // (NewUIBloodCastleEnter.cpp). Now the map name itself carries the same Tier label, e.g.
+        // "Blood Castle 3 (Tier 2)".
+        const int maxBloodCastleLevel = 8; // mirrors NewUIBloodCastleEnter::MAX_ENTER_GRADE, not shared directly to avoid a UI-window dependency here
+        static const wchar_t* const tierLabels[maxBloodCastleLevel] =
+        {
+            I18N::Game::TierLabel1, I18N::Game::TierLabel1Point5, I18N::Game::TierLabel2, I18N::Game::TierLabel2Point5,
+            I18N::Game::TierLabel3, I18N::Game::TierLabel3Point5, I18N::Game::TierLabel4, I18N::Game::TierLabel4Point5,
+        };
+        int level = (iMap == WD_52BLOODCASTLE_MASTER_LEVEL) ? 8 : (iMap - WD_11BLOODCASTLE1 + 1);
+        if (level >= 1 && level <= maxBloodCastleLevel)
+        {
+            static wchar_t szBloodCastleName[64];
+            mu_swprintf(szBloodCastleName, L"%ls %d (%ls)", I18N::Game::BloodCastle, level, tierLabels[level - 1]);
+            return (szBloodCastleName);
+        }
+
         return (I18N::Game::BloodCastle);
     }
     if (iMap == WD_10HEAVEN)
